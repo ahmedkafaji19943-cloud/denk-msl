@@ -348,7 +348,7 @@ export async function addOrUpdateMedRep(medRepName, zone = '', line = '') {
     console.error('Error adding med rep:', err)
     throw err
   }
-
+}
 
 // Remove a med rep
 export async function removeMedRep(medRepName) {
