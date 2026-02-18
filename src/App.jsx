@@ -58,7 +58,22 @@ export default function App() {
   return (
     <div className={night ? 'app night' : 'app'}>
       <header>
-        <div className="brand">Denk MSL</div>
+        <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+          <div style={{
+            width: '36px',
+            height: '36px',
+            background: 'linear-gradient(135deg, #FEED00 0%, #FFC800 100%)',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 800,
+            color: '#000',
+            fontSize: '1.1em',
+            boxShadow: '0 4px 15px rgba(254, 237, 0, 0.3)'
+          }}>D</div>
+          <div className="brand">Denk MSL</div>
+        </div>
         <div className="spacer" />
         <label className="toggle">
           <input type="checkbox" checked={night} onChange={e => setNight(e.target.checked)} /> Night
@@ -103,7 +118,11 @@ export default function App() {
       </main>
 
       <footer>
-        <div>Denk MSL • Powered by Firebase</div>
+        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', flexWrap: 'wrap'}}>
+          <span style={{fontWeight: 600}}>Denk MSL</span>
+          <span>•</span>
+          <span>Medical Science Liaison Management Platform</span>
+        </div>
       </footer>
     </div>
   )

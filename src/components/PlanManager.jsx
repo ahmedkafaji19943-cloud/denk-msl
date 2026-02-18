@@ -121,14 +121,14 @@ export default function PlanManager({ mslId, mslName, config }) {
               top: '100%',
               left: 0,
               right: 0,
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-              background: 'white',
-              maxHeight: '200px',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              background: '#fff',
+              maxHeight: '220px',
               overflowY: 'auto',
               zIndex: 10,
-              marginTop: '4px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              marginTop: '6px',
+              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
             }}>
               {filteredMedReps1.length > 0 ? filteredMedReps1.map(m => (
                 <div
@@ -139,11 +139,13 @@ export default function PlanManager({ mslId, mslName, config }) {
                     setShowMedRep1Dropdown(false)
                   }}
                   style={{
-                    padding: '10px 12px',
+                    padding: '12px 14px',
                     cursor: 'pointer',
-                    background: medRep1 === m ? '#FEED00' : 'white',
-                    borderBottom: '1px solid #f0f0f0',
-                    fontSize: '0.95em'
+                    background: medRep1 === m ? 'linear-gradient(135deg, rgba(254, 237, 0, 0.15), rgba(254, 237, 0, 0.08))' : '#fff',
+                    borderBottom: '1px solid #f3f4f6',
+                    fontSize: '0.95em',
+                    borderLeft: medRep1 === m ? '3px solid #FEED00' : 'none',
+                    paddingLeft: medRep1 === m ? '11px' : '14px'
                   }}
                 >
                   {m}
@@ -156,9 +158,9 @@ export default function PlanManager({ mslId, mslName, config }) {
         </div>
 
         {medRep1 && (
-          <div style={{background: '#fffbf0', padding: 12, borderRadius: 6, marginBottom: 16, border: '2px solid #FEED00'}}>
-            <label style={{backgroundColor: '#FEED00', color: '#000', padding: '4px 8px', borderRadius: 3, fontWeight: 'bold', marginBottom: 8, display: 'inline-block'}}>
-              👉 Select Product for {medRep1}
+          <div style={{background: 'linear-gradient(135deg, rgba(254, 237, 0, 0.08), rgba(254, 237, 0, 0.04))', padding: 14, borderRadius: 8, marginBottom: 16, border: '2px solid #FEED00', boxShadow: '0 4px 12px rgba(254, 237, 0, 0.15)'}}>
+            <label style={{background: 'linear-gradient(135deg, #FEED00 0%, #FFC800 100%)', color: '#000', padding: '6px 10px', borderRadius: 6, fontWeight: 700, marginBottom: 8, display: 'inline-block', fontSize: '0.9em', boxShadow: '0 2px 8px rgba(254, 237, 0, 0.2)'}}>
+              📍 Select Product for {medRep1}
             </label>
             <div style={{marginTop: 8, position: 'relative'}}>
               <input
@@ -181,14 +183,14 @@ export default function PlanManager({ mslId, mslName, config }) {
                   top: '100%',
                   left: 0,
                   right: 0,
-                  border: '1px solid #ccc',
-                  borderRadius: '4px',
-                  background: 'white',
-                  maxHeight: '200px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  background: '#fff',
+                  maxHeight: '220px',
                   overflowY: 'auto',
                   zIndex: 10,
-                  marginTop: '4px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                  marginTop: '6px',
+                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
                 }}>
                   {filteredProducts1.length > 0 ? filteredProducts1.map(p => (
                     <div
@@ -199,17 +201,19 @@ export default function PlanManager({ mslId, mslName, config }) {
                         setShowProduct1Dropdown(false)
                       }}
                       style={{
-                        padding: '10px 12px',
+                        padding: '12px 14px',
                         cursor: 'pointer',
-                        background: product1?.id === p.id ? '#FEED00' : 'white',
-                        borderBottom: '1px solid #f0f0f0',
-                        fontSize: '0.95em'
+                        background: product1?.id === p.id ? 'linear-gradient(135deg, rgba(254, 237, 0, 0.15), rgba(254, 237, 0, 0.08))' : '#fff',
+                        borderBottom: '1px solid #f3f4f6',
+                        fontSize: '0.95em',
+                        borderLeft: product1?.id === p.id ? '3px solid #FEED00' : 'none',
+                        paddingLeft: product1?.id === p.id ? '11px' : '14px'
                       }}
                     >
                       {p.name}
                     </div>
                   )) : (
-                    <div style={{padding: '10px 12px', color: '#999'}}>No matches</div>
+                    <div style={{padding: '12px 14px', color: '#9ca3af'}}>No matches</div>
                   )}
                 </div>
               )}
@@ -234,14 +238,14 @@ export default function PlanManager({ mslId, mslName, config }) {
               top: '100%',
               left: 0,
               right: 0,
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-              background: 'white',
-              maxHeight: '200px',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              background: '#fff',
+              maxHeight: '220px',
               overflowY: 'auto',
               zIndex: 10,
-              marginTop: '4px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              marginTop: '6px',
+              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
             }}>
               {filteredMedReps2.length > 0 ? filteredMedReps2.map(m => (
                 <div
@@ -252,26 +256,28 @@ export default function PlanManager({ mslId, mslName, config }) {
                     setShowMedRep2Dropdown(false)
                   }}
                   style={{
-                    padding: '10px 12px',
+                    padding: '12px 14px',
                     cursor: 'pointer',
-                    background: medRep2 === m ? '#FEED00' : 'white',
-                    borderBottom: '1px solid #f0f0f0',
-                    fontSize: '0.95em'
+                    background: medRep2 === m ? 'linear-gradient(135deg, rgba(254, 237, 0, 0.15), rgba(254, 237, 0, 0.08))' : '#fff',
+                    borderBottom: '1px solid #f3f4f6',
+                    fontSize: '0.95em',
+                    borderLeft: medRep2 === m ? '3px solid #FEED00' : 'none',
+                    paddingLeft: medRep2 === m ? '11px' : '14px'
                   }}
                 >
                   {m}
                 </div>
               )) : (
-                <div style={{padding: '10px 12px', color: '#999'}}>No matches</div>
+                <div style={{padding: '12px 14px', color: '#9ca3af'}}>No matches</div>
               )}
             </div>
           )}
         </div>
 
         {medRep2 && (
-          <div style={{background: '#fffbf0', padding: 12, borderRadius: 6, marginBottom: 16, border: '2px solid #FEED00'}}>
-            <label style={{backgroundColor: '#FEED00', color: '#000', padding: '4px 8px', borderRadius: 3, fontWeight: 'bold', marginBottom: 8, display: 'inline-block'}}>
-              👉 Select Product for {medRep2}
+          <div style={{background: 'linear-gradient(135deg, rgba(254, 237, 0, 0.08), rgba(254, 237, 0, 0.04))', padding: 14, borderRadius: 8, marginBottom: 16, border: '2px solid #FEED00', boxShadow: '0 4px 12px rgba(254, 237, 0, 0.15)'}}>
+            <label style={{background: 'linear-gradient(135deg, #FEED00 0%, #FFC800 100%)', color: '#000', padding: '6px 10px', borderRadius: 6, fontWeight: 700, marginBottom: 8, display: 'inline-block', fontSize: '0.9em', boxShadow: '0 2px 8px rgba(254, 237, 0, 0.2)'}}>
+              📍 Select Product for {medRep2}
             </label>
             <div style={{marginTop: 8, position: 'relative'}}>
               <input
@@ -294,14 +300,14 @@ export default function PlanManager({ mslId, mslName, config }) {
                   top: '100%',
                   left: 0,
                   right: 0,
-                  border: '1px solid #ccc',
-                  borderRadius: '4px',
-                  background: 'white',
-                  maxHeight: '200px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  background: '#fff',
+                  maxHeight: '220px',
                   overflowY: 'auto',
                   zIndex: 10,
-                  marginTop: '4px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                  marginTop: '6px',
+                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
                 }}>
                   {filteredProducts2.length > 0 ? filteredProducts2.map(p => (
                     <div
@@ -312,17 +318,19 @@ export default function PlanManager({ mslId, mslName, config }) {
                         setShowProduct2Dropdown(false)
                       }}
                       style={{
-                        padding: '10px 12px',
+                        padding: '12px 14px',
                         cursor: 'pointer',
-                        background: product2?.id === p.id ? '#FEED00' : 'white',
-                        borderBottom: '1px solid #f0f0f0',
-                        fontSize: '0.95em'
+                        background: product2?.id === p.id ? 'linear-gradient(135deg, rgba(254, 237, 0, 0.15), rgba(254, 237, 0, 0.08))' : '#fff',
+                        borderBottom: '1px solid #f3f4f6',
+                        fontSize: '0.95em',
+                        borderLeft: product2?.id === p.id ? '3px solid #FEED00' : 'none',
+                        paddingLeft: product2?.id === p.id ? '11px' : '14px'
                       }}
                     >
                       {p.name}
                     </div>
                   )) : (
-                    <div style={{padding: '10px 12px', color: '#999'}}>No matches</div>
+                    <div style={{padding: '12px 14px', color: '#9ca3af'}}>No matches</div>
                   )}
                 </div>
               )}

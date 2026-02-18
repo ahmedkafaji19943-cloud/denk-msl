@@ -124,14 +124,14 @@ export default function LogCall({ user, mslId, config }) {
             top: '100%',
             left: 0,
             right: 0,
-            border: '1px solid #ccc',
-            borderRadius: '4px',
-            background: 'white',
-            maxHeight: '200px',
+            border: '1px solid #e5e7eb',
+            borderRadius: '8px',
+            background: '#fff',
+            maxHeight: '220px',
             overflowY: 'auto',
             zIndex: 10,
-            marginTop: '4px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+            marginTop: '6px',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
           }}>
             {filteredMedReps.length > 0 ? filteredMedReps.map(m => (
               <div
@@ -142,17 +142,19 @@ export default function LogCall({ user, mslId, config }) {
                   setShowMedRepDropdown(false)
                 }}
                 style={{
-                  padding: '10px 12px',
+                  padding: '12px 14px',
                   cursor: 'pointer',
-                  background: medRep === m ? '#FEED00' : 'white',
-                  borderBottom: '1px solid #f0f0f0',
-                  fontSize: '0.95em'
+                  background: medRep === m ? 'linear-gradient(135deg, rgba(254, 237, 0, 0.15), rgba(254, 237, 0, 0.08))' : '#fff',
+                  borderBottom: '1px solid #f3f4f6',
+                  fontSize: '0.95em',
+                  borderLeft: medRep === m ? '3px solid #FEED00' : 'none',
+                  paddingLeft: medRep === m ? '11px' : '14px'
                 }}
               >
                 {m}
               </div>
             )) : (
-              <div style={{padding: '10px 12px', color: '#999'}}>No matches</div>
+              <div style={{padding: '12px 14px', color: '#9ca3af'}}>No matches</div>
             )}
           </div>
         )}
@@ -179,14 +181,14 @@ export default function LogCall({ user, mslId, config }) {
             top: '100%',
             left: 0,
             right: 0,
-            border: '1px solid #ccc',
-            borderRadius: '4px',
-            background: 'white',
-            maxHeight: '200px',
+            border: '1px solid #e5e7eb',
+            borderRadius: '8px',
+            background: '#fff',
+            maxHeight: '220px',
             overflowY: 'auto',
             zIndex: 10,
-            marginTop: '4px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+            marginTop: '6px',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
           }}>
             {filteredProducts.length > 0 ? filteredProducts.map(p => (
               <div
@@ -197,17 +199,19 @@ export default function LogCall({ user, mslId, config }) {
                   setShowProductDropdown(false)
                 }}
                 style={{
-                  padding: '10px 12px',
+                  padding: '12px 14px',
                   cursor: 'pointer',
-                  background: product?.id === p.id ? '#FEED00' : 'white',
-                  borderBottom: '1px solid #f0f0f0',
-                  fontSize: '0.95em'
+                  background: product?.id === p.id ? 'linear-gradient(135deg, rgba(254, 237, 0, 0.15), rgba(254, 237, 0, 0.08))' : '#fff',
+                  borderBottom: '1px solid #f3f4f6',
+                  fontSize: '0.95em',
+                  borderLeft: product?.id === p.id ? '3px solid #FEED00' : 'none',
+                  paddingLeft: product?.id === p.id ? '11px' : '14px'
                 }}
               >
                 {p.name}
               </div>
             )) : (
-              <div style={{padding: '10px 12px', color: '#999'}}>No matches</div>
+              <div style={{padding: '12px 14px', color: '#9ca3af'}}>No matches</div>
             )}
           </div>
         )}
