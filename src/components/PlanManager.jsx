@@ -5,14 +5,16 @@ export default function PlanManager({ mslId, mslName, config }) {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [medRep1, setMedRep1] = useState('')
   const [medRep2, setMedRep2] = useState('')
-  const [product, setProduct] = useState(null)
+  const [product1, setProduct1] = useState(null)
+  const [product2, setProduct2] = useState(null)
   const [saving, setSaving] = useState(false)
   const [plans, setPlans] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (config && config.products.length > 0 && config.medReps.length > 0) {
-      setProduct(config.products[0])
+      setProduct1(config.products[0])
+      setProduct2(config.products[0])
       const medRepNames = (config.medReps || []).map(m => typeof m === 'string' ? m : m.name)
       setMedRep1(medRepNames[0])
       setMedRep2(medRepNames[1] || medRepNames[0])
@@ -34,21 +36,21 @@ export default function PlanManager({ mslId, mslName, config }) {
   async function handleSavePlan() {
     setSaving(true)
     try {
-      // Save first med rep call
+      // Save first med rep call with product1
       await savePlan({
         date,
         medRep: medRep1,
-        productId: product.id,
+        productId: product1.id,
         mslId,
         mslName,
         createdOn: new Date().toLocaleString()
       })
       
-      // Save second med rep call
+      // Save second med rep call with product2
       await savePlan({
         date,
         medRep: medRep2,
-        productId: product.id,
+        productId: product2.id,
         mslId,
         mslName,
         createdOn: new Date().toLocaleString()
@@ -63,7 +65,7 @@ export default function PlanManager({ mslId, mslName, config }) {
     }
   }
 
-  if (loading || !config || !product) return <div className="card">Loading...</div>
+  if (loading || !config || !product1 || !product2) return <div className="card">Loading...</div>
 
   // Group plans by date
   const groupedPlans = {}
@@ -89,15 +91,23 @@ export default function PlanManager({ mslId, mslName, config }) {
           {medRepNames.map(m => <option key={m} value={m}>{m}</option>)}
         </select>
 
+        <label>Product for Med Rep #1</label>
+        <select value={product1.id} onChange={e => {
+          const p = config.products.find(x => x.id === e.target.value)
+          setProduct1(p)
+        }}>
+          {config.products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+
         <label>Med Rep #2</label>
         <select value={medRep2} onChange={e => setMedRep2(e.target.value)}>
           {medRepNames.map(m => <option key={m} value={m}>{m}</option>)}
         </select>
 
-        <label>Product</label>
-        <select value={product.id} onChange={e => {
+        <label>Product for Med Rep #2</label>
+        <select value={product2.id} onChange={e => {
           const p = config.products.find(x => x.id === e.target.value)
-          setProduct(p)
+          setProduct2(p)
         }}>
           {config.products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
