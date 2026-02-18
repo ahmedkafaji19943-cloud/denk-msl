@@ -7,6 +7,8 @@ export default function Reports({ mslId, mslName, isManager, config }) {
   const [calls, setCalls] = useState([])
   const [loading, setLoading] = useState(true)
   const [teamReports, setTeamReports] = useState({})
+  const [expandedMSLs, setExpandedMSLs] = useState({})
+  const [expandedMedReps, setExpandedMedReps] = useState({})
 
   useEffect(() => {
     loadReports()
@@ -31,16 +33,41 @@ export default function Reports({ mslId, mslName, isManager, config }) {
     return groups
   }
 
+  function toggleMSL(mslId) {
+    setExpandedMSLs(prev => ({...prev, [mslId]: !prev[mslId]}))
+  }
+
+  function toggleMedRep(key) {
+    setExpandedMedReps(prev => ({...prev, [key]: !prev[key]}))
+  }
+
   if (loading) return <div className="card">Loading reports...</div>
 
   if (isManager) {
     return (
       <div className="card">
         <h2>Team Reports</h2>
-        {Object.values(teamReports).map(team => (
-          <div key={team.name} className="team-item">
-            <h3>{team.name}</h3>
-            <ReportContent calls={team.calls} />
+        {Object.entries(teamReports).map(([mslId, team]) => (
+          <div key={mslId} style={{marginBottom: 20, borderBottom: '1px solid #eee', paddingBottom: 20}}>
+            <div
+              onClick={() => toggleMSL(mslId)}
+              style={{
+                cursor: 'pointer',
+                padding: 12,
+                background: expandedMSLs[mslId] ? '#FEED00' : '#f5f5f5',
+                borderRadius: 6,
+                fontWeight: 'bold',
+                fontSize: '1.1em',
+                userSelect: 'none'
+              }}
+            >
+              {expandedMSLs[mslId] ? '▼' : '▶'} {team.name}
+            </div>
+            {expandedMSLs[mslId] && (
+              <div style={{marginTop: 12, paddingLeft: 12}}>
+                <ReportContent calls={team.calls} config={config} onToggleMedRep={toggleMedRep} expandedMedReps={expandedMedReps} />
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -50,28 +77,102 @@ export default function Reports({ mslId, mslName, isManager, config }) {
   return (
     <div className="card">
       <h2>My Report</h2>
-      <ReportContent calls={calls} />
+      <ReportContent calls={calls} config={config} onToggleMedRep={toggleMedRep} expandedMedReps={expandedMedReps} />
     </div>
   )
 }
 
-function ReportContent({ calls }) {
+function ReportContent({ calls, config, onToggleMedRep, expandedMedReps }) {
   const byMedRep = {}
+  const byMedRepProduct = {}
+  
   calls.forEach(c => {
     byMedRep[c.medRep] = byMedRep[c.medRep] || []
     byMedRep[c.medRep].push(c.score)
+    
+    // Group by med rep and product
+    const key = `${c.medRep}_${c.productId}`
+    byMedRepProduct[key] = byMedRepProduct[key] || { medRep: c.medRep, productId: c.productId, messages: [] }
+    
+    // Collect all messages
+    if (c.messages && Array.isArray(c.messages)) {
+      byMedRepProduct[key].messages.push(...c.messages)
+    }
+  })
+  
+  // Remove duplicates
+  Object.keys(byMedRepProduct).forEach(key => {
+    byMedRepProduct[key].messages = [...new Set(byMedRepProduct[key].messages)]
   })
 
   return (
     <>
-      <div className="muted">Total calls: {calls.length}</div>
-      <h3>Scores by Med Rep</h3>
+      <div className="muted" style={{marginBottom: 16}}>
+        📊 Total calls: <strong>{calls.length}</strong>
+      </div>
+      
       {Object.keys(byMedRep).length > 0 ? (
-        <ul>
-          {Object.keys(byMedRep).map(k => (
-            <li key={k}><strong>{k}:</strong> {avg(byMedRep[k])}</li>
-          ))}
-        </ul>
+        <div>
+          {Object.keys(byMedRep).sort().map(medRep => {
+            const repKey = `medRep_${medRep}`
+            const isExpanded = expandedMedReps[repKey]
+            const avgScore = avg(byMedRep[medRep])
+            const productsForRep = Object.keys(byMedRepProduct).filter(k => byMedRepProduct[k].medRep === medRep)
+            
+            return (
+              <div key={medRep} style={{marginBottom: 16, border: '1px solid #eee', borderRadius: 6, overflow: 'hidden'}}>
+                <div
+                  onClick={() => onToggleMedRep(repKey)}
+                  style={{
+                    cursor: 'pointer',
+                    padding: 12,
+                    background: isExpanded ? '#FEED00' : '#f9f9f9',
+                    fontWeight: 'bold',
+                    userSelect: 'none',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}
+                >
+                  <span>{isExpanded ? '▼' : '▶'} {medRep}</span>
+                  <span style={{fontSize: '0.9em', color: '#666'}}>Calls: {byMedRep[medRep].length} | Avg Score: {avgScore}</span>
+                </div>
+
+                {isExpanded && (
+                  <div style={{padding: 16, background: '#fafafa'}}>
+                    {productsForRep.map(productKey => {
+                      const productData = byMedRepProduct[productKey]
+                      const product = config?.products?.find(p => p.id === productData.productId)
+                      
+                      return (
+                        <div key={productKey} style={{marginBottom: 12, padding: 12, background: '#fff', borderRadius: 6, border: '1px solid #e0e0e0'}}>
+                          <div style={{fontWeight: 'bold', color: '#FEED00', marginBottom: 8}}>
+                            📦 {product?.name || productData.productId}
+                          </div>
+                          
+                          {productData.messages.length > 0 ? (
+                            <div>
+                              <div style={{fontSize: '0.9em', color: '#666', marginBottom: 8}}>Messages used:</div>
+                              <ul style={{margin: 0, paddingLeft: 20}}>
+                                {productData.messages.map((msg, i) => (
+                                  <li key={i} style={{fontSize: '0.9em', lineHeight: 1.6, color: '#333'}}>
+                                    {msg}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ) : (
+                            <div className="muted" style={{fontSize: '0.9em'}}>No messages recorded</div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
       ) : (
         <div className="muted">No calls logged yet</div>
       )}
