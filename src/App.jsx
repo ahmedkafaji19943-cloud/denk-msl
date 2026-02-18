@@ -11,6 +11,7 @@ import MedRepManager from './components/MedRepManager'
 import PlanManager from './components/PlanManager'
 
 // Denk MSL Main App Component
+// Force rebuild - 2026-02-18
 export default function App() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
