@@ -156,9 +156,11 @@ export default function PlanManager({ mslId, mslName, config }) {
         </div>
 
         {medRep1 && (
-          <>
-            <label>Product for Med Rep #1</label>
-            <div style={{position: 'relative'}}>
+          <div style={{background: '#fffbf0', padding: 12, borderRadius: 6, marginBottom: 16, border: '2px solid #FEED00'}}>
+            <label style={{backgroundColor: '#FEED00', color: '#000', padding: '4px 8px', borderRadius: 3, fontWeight: 'bold', marginBottom: 8, display: 'inline-block'}}>
+              👉 Select Product for {medRep1}
+            </label>
+            <div style={{marginTop: 8, position: 'relative'}}>
               <input
                 type="text"
                 placeholder="Search product..."
@@ -166,8 +168,13 @@ export default function PlanManager({ mslId, mslName, config }) {
                 onChange={e => setProduct1Search(e.target.value)}
                 onFocus={() => setShowProduct1Dropdown(true)}
                 onBlur={() => setTimeout(() => setShowProduct1Dropdown(false), 150)}
-                style={{width: '100%', padding: '8px', fontSize: '1em'}}
+                style={{width: '100%', padding: '10px', fontSize: '1em', border: '2px solid #FEED00', borderRadius: 4}}
               />
+              {product1 && (
+                <div style={{marginTop: 8, padding: 8, background: '#fff', border: '1px solid #FEED00', borderRadius: 4}}>
+                  ✅ Selected: <strong>{product1.name}</strong>
+                </div>
+              )}
               {showProduct1Dropdown && (
                 <div style={{
                   position: 'absolute',
@@ -207,7 +214,7 @@ export default function PlanManager({ mslId, mslName, config }) {
                 </div>
               )}
             </div>
-          </>
+          </div>
         )}
 
         <label>Med Rep #2</label>
@@ -262,9 +269,11 @@ export default function PlanManager({ mslId, mslName, config }) {
         </div>
 
         {medRep2 && (
-          <>
-            <label>Product for Med Rep #2</label>
-            <div style={{position: 'relative'}}>
+          <div style={{background: '#fffbf0', padding: 12, borderRadius: 6, marginBottom: 16, border: '2px solid #FEED00'}}>
+            <label style={{backgroundColor: '#FEED00', color: '#000', padding: '4px 8px', borderRadius: 3, fontWeight: 'bold', marginBottom: 8, display: 'inline-block'}}>
+              👉 Select Product for {medRep2}
+            </label>
+            <div style={{marginTop: 8, position: 'relative'}}>
               <input
                 type="text"
                 placeholder="Search product..."
@@ -272,8 +281,13 @@ export default function PlanManager({ mslId, mslName, config }) {
                 onChange={e => setProduct2Search(e.target.value)}
                 onFocus={() => setShowProduct2Dropdown(true)}
                 onBlur={() => setTimeout(() => setShowProduct2Dropdown(false), 150)}
-                style={{width: '100%', padding: '8px', fontSize: '1em'}}
+                style={{width: '100%', padding: '10px', fontSize: '1em', border: '2px solid #FEED00', borderRadius: 4}}
               />
+              {product2 && (
+                <div style={{marginTop: 8, padding: 8, background: '#fff', border: '1px solid #FEED00', borderRadius: 4}}>
+                  ✅ Selected: <strong>{product2.name}</strong>
+                </div>
+              )}
               {showProduct2Dropdown && (
                 <div style={{
                   position: 'absolute',
@@ -313,7 +327,7 @@ export default function PlanManager({ mslId, mslName, config }) {
                 </div>
               )}
             </div>
-          </>
+          </div>
         )}
 
         <button className="primary" onClick={handleSavePlan} disabled={saving}>
