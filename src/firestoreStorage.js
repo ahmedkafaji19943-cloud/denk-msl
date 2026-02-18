@@ -162,16 +162,27 @@ export async function createProduct(productName, initialMessages) {
     const snap = await getDoc(ref)
     
     if (!snap.exists()) {
-      throw new Error('Config not initialized. Please refresh the page.')
+      console.warn('Config not found, initializing fresh')
+      await initializeSharedData()
+      return await createProduct(productName, initialMessages) // Retry
     }
     
-    const data = snap.data()
-    const products = data.products || []
+    let data = snap.data()
+    if (!data) {
+      console.warn('Config data is empty, reinitializing')
+      await initializeSharedData()
+      return await createProduct(productName, initialMessages) // Retry
+    }
+    
+    let products = data.products || []
+    if (!Array.isArray(products)) {
+      products = []
+    }
     
     const newProduct = {
       id: productId,
       name: productName,
-      messages: initialMessages || [
+      messages: (initialMessages && initialMessages.filter(m => m)) || [
         'Key benefit 1',
         'Key benefit 2',
         'Key benefit 3',
@@ -182,12 +193,20 @@ export async function createProduct(productName, initialMessages) {
     }
     
     // Add to products array if not exists
-    const existing = products.find(p => p.id === productId)
+    const existing = products.find(p => p && p.id === productId)
     if (!existing) {
       products.push(newProduct)
-      await setDoc(ref, { ...data, products })
     }
     
+    const updatedData = {
+      ...data,
+      products,
+      msls: data.msls || [],
+      medReps: data.medReps || [],
+      updatedAt: serverTimestamp()
+    }
+    
+    await setDoc(ref, updatedData)
     return newProduct
   } catch (err) {
     console.error('Error creating product:', err)
@@ -202,24 +221,48 @@ export async function addOrUpdateMedRep(medRepName, zone = '', line = '') {
     const snap = await getDoc(ref)
     
     if (!snap.exists()) {
-      throw new Error('Config not initialized. Please refresh the page.')
+      console.warn('Config not found, initializing fresh config')
+      await initializeSharedData()
+      return await addOrUpdateMedRep(medRepName, zone, line) // Retry
     }
     
-    const data = snap.data()
+    let data = snap.data()
+    if (!data) {
+      console.warn('Config data is empty, reinitializing')
+      await initializeSharedData()
+      return await addOrUpdateMedRep(medRepName, zone, line) // Retry
+    }
+    
+    // Ensure medReps array exists and is properly formatted
     let medReps = data.medReps || []
+    if (!Array.isArray(medReps)) {
+      medReps = []
+    }
     
     // Convert old string format to object if needed
-    medReps = medReps.map(m => typeof m === 'string' ? { name: m, zone: '', line: '' } : m)
+    medReps = medReps.map(m => {
+      if (!m) return null
+      return typeof m === 'string' ? { name: m, zone: '', line: '' } : m
+    }).filter(m => m !== null)
     
-    // Check if already exists
-    const existing = medReps.findIndex(m => m.name === medRepName)
+    // Check if already exists and update or add
+    const existing = medReps.findIndex(m => m && m.name === medRepName)
     if (existing >= 0) {
-      medReps[existing] = { name: medRepName, zone, line }
+      medReps[existing] = { name: medRepName, zone: zone || '', line: line || '' }
     } else {
-      medReps.push({ name: medRepName, zone, line })
+      medReps.push({ name: medRepName, zone: zone || '', line: line || '' })
     }
     
-    await setDoc(ref, { ...data, medReps })
+    // Ensure other required fields exist
+    const updatedData = {
+      ...data,
+      medReps,
+      msls: data.msls || [],
+      products: data.products || [],
+      updatedAt: serverTimestamp()
+    }
+    
+    await setDoc(ref, updatedData)
     return medReps
   } catch (err) {
     console.error('Error adding med rep:', err)
@@ -234,18 +277,40 @@ export async function removeMedRep(medRepName) {
     const snap = await getDoc(ref)
     
     if (!snap.exists()) {
-      throw new Error('Config not initialized.')
+      console.warn('Config not found, initializing fresh')
+      await initializeSharedData()
+      return await removeMedRep(medRepName) // Retry
     }
     
-    const data = snap.data()
+    let data = snap.data()
+    if (!data) {
+      console.warn('Config data is empty, reinitializing')
+      await initializeSharedData()
+      return await removeMedRep(medRepName) // Retry
+    }
+    
     let medReps = data.medReps || []
+    if (!Array.isArray(medReps)) {
+      medReps = []
+    }
     
     // Convert old string format to object if needed
-    medReps = medReps.map(m => typeof m === 'string' ? { name: m, zone: '', line: '' } : m)
+    medReps = medReps.map(m => {
+      if (!m) return null
+      return typeof m === 'string' ? { name: m, zone: '', line: '' } : m
+    }).filter(m => m !== null)
     
     const filteredReps = medReps.filter(m => m.name !== medRepName)
     
-    await setDoc(ref, { ...data, medReps: filteredReps })
+    const updatedData = {
+      ...data,
+      medReps: filteredReps,
+      msls: data.msls || [],
+      products: data.products || [],
+      updatedAt: serverTimestamp()
+    }
+    
+    await setDoc(ref, updatedData)
     return filteredReps
   } catch (err) {
     console.error('Error removing med rep:', err)
