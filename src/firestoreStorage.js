@@ -66,7 +66,7 @@ export async function initializeSharedData() {
 // Get shared config (MSLs, med reps, products) - with caching
 let configCache = null
 let cacheTime = 0
-const CACHE_DURATION = 2000 // Cache for 2 seconds
+const CACHE_DURATION = 30000 // Cache for 30 seconds
 
 export async function getSharedConfig(bypassCache = false) {
   try {
@@ -95,6 +95,19 @@ export async function getSharedConfig(bypassCache = false) {
   } catch (err) {
     console.error('Error fetching config:', err)
     return configCache || MSL_DATA
+  }
+}
+
+// Refresh cache in background without blocking
+export async function refreshConfigInBackground() {
+  try {
+    const snap = await getDoc(doc(db, 'config', 'app'))
+    if (snap.exists()) {
+      configCache = snap.data()
+      cacheTime = Date.now()
+    }
+  } catch (err) {
+    console.error('Background config refresh failed:', err)
   }
 }
 

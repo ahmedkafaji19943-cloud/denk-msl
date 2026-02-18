@@ -31,10 +31,10 @@ export default function ProductManager({ config, onProductAdded }) {
       setProductName('')
       setMessages(['', '', '', '', '', ''])
       setShowForm(false)
-      onProductAdded()
+      // Refresh config in background, don't wait
+      setTimeout(() => onProductAdded(), 100)
     } catch (err) {
       alert('Error: ' + err.message)
-    } finally {
       setSaving(false)
     }
   }

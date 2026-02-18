@@ -26,10 +26,10 @@ export default function MedRepManager({ config, onMedRepsUpdated }) {
       setNewZone('')
       setNewLine('')
       setShowForm(false)
-      onMedRepsUpdated()
+      // Refresh config in background, don't wait
+      setTimeout(() => onMedRepsUpdated(), 100)
     } catch (err) {
       alert('Error: ' + err.message)
-    } finally {
       setSaving(false)
     }
   }
@@ -45,10 +45,10 @@ export default function MedRepManager({ config, onMedRepsUpdated }) {
       await addOrUpdateMedRep(editName.trim(), editZone.trim(), editLine.trim())
       alert('Med rep updated!')
       setEditingMedRep(null)
-      onMedRepsUpdated()
+      // Refresh config in background, don't wait
+      setTimeout(() => onMedRepsUpdated(), 100)
     } catch (err) {
       alert('Error: ' + err.message)
-    } finally {
       setSaving(false)
     }
   }
@@ -60,10 +60,10 @@ export default function MedRepManager({ config, onMedRepsUpdated }) {
     try {
       await removeMedRep(medRepName)
       alert('Med rep removed!')
-      onMedRepsUpdated()
+      // Refresh config in background, don't wait
+      setTimeout(() => onMedRepsUpdated(), 100)
     } catch (err) {
       alert('Error: ' + err.message)
-    } finally {
       setSaving(false)
     }
   }
