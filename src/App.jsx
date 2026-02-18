@@ -6,6 +6,7 @@ import FirebaseLogin from './components/FirebaseLogin'
 import LogCall from './components/LogCall'
 import MessagesEdit from './components/MessagesEdit'
 import Reports from './components/Reports'
+import ProductManager from './components/ProductManager'
 
 export default function App() {
   const [user, setUser] = useState(null)
@@ -43,6 +44,11 @@ export default function App() {
     setTab('log')
   }
 
+  async function reloadConfig() {
+    const cfg = await getSharedConfig()
+    setConfig(cfg)
+  }
+
   if (loading) return <div style={{padding: '20px'}}>Loading...</div>
 
   return (
@@ -66,6 +72,7 @@ export default function App() {
             <div className="tabs">
               <button onClick={() => setTab('log')} className={tab==='log'? 'active':''}>Log Call</button>
               <button onClick={() => setTab('edit')} className={tab==='edit'? 'active':''}>Messages</button>
+              <button onClick={() => setTab('products')} className={tab==='products'? 'active':''}>Products</button>
               <button onClick={() => setTab('report')} className={tab==='report'? 'active':''}>Report</button>
               {mslInfo?.manager && <button onClick={() => setTab('team')} className={tab==='team'? 'active':''}>Team</button>}
             </div>
@@ -80,6 +87,7 @@ export default function App() {
               <>
                 {tab==='log' && <LogCall user={user} mslId={mslInfo.id} config={config} />}
                 {tab==='edit' && <MessagesEdit mslId={mslInfo.id} config={config} />}
+                {tab==='products' && <ProductManager config={config} onProductAdded={reloadConfig} />}
                 {tab==='report' && <Reports mslId={mslInfo.id} mslName={mslInfo.name} isManager={false} config={config} />}
                 {tab==='team' && mslInfo?.manager && <Reports mslId={mslInfo.id} mslName={mslInfo.name} isManager={true} config={config} />}
               </>

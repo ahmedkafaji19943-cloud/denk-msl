@@ -124,3 +124,70 @@ export async function getMessagesForMSL(mslId, productId, defaultMessages) {
     return defaultMessages
   }
 }
+
+// Add a new message to MSL's product messages
+export async function addMessageToProduct(mslId, productId, newMessage, defaultMessages) {
+  try {
+    const ref = doc(db, 'mslMessages', `${mslId}_${productId}`)
+    const snap = await getDoc(ref)
+    const messages = snap.exists() ? snap.data().messages : defaultMessages.slice()
+    messages.push(newMessage)
+    await setDoc(ref, { mslId, productId, messages, updatedAt: serverTimestamp() })
+    return messages
+  } catch (err) {
+    console.error('Error adding message:', err)
+    throw err
+  }
+}
+
+// Create a new product globally
+export async function createProduct(productName, initialMessages) {
+  try {
+    const productId = productName.toLowerCase().replace(/\s+/g, '_')
+    const ref = doc(db, 'config', 'app')
+    const snap = await getDoc(ref)
+    const data = snap.data()
+    
+    const newProduct = {
+      id: productId,
+      name: productName,
+      messages: initialMessages || [
+        'Key benefit 1',
+        'Key benefit 2',
+        'Key benefit 3',
+        'Clinical data',
+        'Safety profile',
+        'Usage recommendation'
+      ]
+    }
+    
+    // Add to products array if not exists
+    const existing = data.products.find(p => p.id === productId)
+    if (!existing) {
+      data.products.push(newProduct)
+      await setDoc(ref, data)
+    }
+    
+    return newProduct
+  } catch (err) {
+    console.error('Error creating product:', err)
+    throw err
+  }
+}
+
+// Check if message was used with specific med rep
+export async function wasMessageUsedWithMedRep(medRep, productId, message, mslId) {
+  try {
+    const q = query(
+      collection(db, 'calls'),
+      where('mslId', '==', mslId),
+      where('medRep', '==', medRep),
+      where('productId', '==', productId)
+    )
+    const snap = await getDocs(q)
+    return snap.docs.some(d => d.data().messages?.includes(message))
+  } catch (err) {
+    console.error('Error checking history:', err)
+    return false
+  }
+}

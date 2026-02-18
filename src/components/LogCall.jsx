@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { getSharedConfig, saveCall, getMessagesForMSL, getAllCalls } from '../firestoreStorage'
+import { getSharedConfig, saveCall, getMessagesForMSL, wasMessageUsedWithMedRep } from '../firestoreStorage'
 
 export default function LogCall({ user, mslId, config }) {
   const [medRep, setMedRep] = useState('')
@@ -10,6 +10,7 @@ export default function LogCall({ user, mslId, config }) {
   const [note, setNote] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [usageHistory, setUsageHistory] = useState({})
 
   useEffect(() => {
     if (config && config.products.length > 0 && config.medReps.length > 0) {
@@ -25,14 +26,24 @@ export default function LogCall({ user, mslId, config }) {
     }
   }, [product])
 
+  useEffect(() => {
+    if (product && medRep) {
+      checkMessageHistory()
+    }
+  }, [medRep, product])
+
   async function loadMessages() {
     const msgs = await getMessagesForMSL(mslId, product.id, product.messages)
     setMessages(msgs)
   }
 
-  async function usedBefore(msg) {
-    const allCalls = await getAllCalls()
-    return allCalls.some(c => c.medRep === medRep && c.productId === product.id && c.messages?.includes(msg))
+  async function checkMessageHistory() {
+    const history = {}
+    for (const msg of messages) {
+      const used = await wasMessageUsedWithMedRep(medRep, product.id, msg, mslId)
+      history[msg] = used
+    }
+    setUsageHistory(history)
   }
 
   function toggleMessage(i) {
@@ -55,6 +66,8 @@ export default function LogCall({ user, mslId, config }) {
       alert('Call saved!')
       setSelected([])
       setNote('')
+      // Refresh history
+      await checkMessageHistory()
     } catch (err) {
       alert('Error: ' + err.message)
     } finally {
@@ -83,7 +96,16 @@ export default function LogCall({ user, mslId, config }) {
       <label>Messages (tap to select)</label>
       <div className="messages">
         {messages.map((m, i) => (
-          <MessageChip key={i} msg={m} isSelected={selected.includes(m)} onClick={() => toggleMessage(i)} />
+          <button 
+            key={i}
+            className={selected.includes(m) ? 'chip selected' : 'chip'} 
+            onClick={() => toggleMessage(i)}
+          >
+            <div>{m}</div>
+            <small className="badge">
+              {usageHistory[m] ? `✓ Used with ${medRep}` : 'New for this rep'}
+            </small>
+          </button>
         ))}
       </div>
 
@@ -97,13 +119,5 @@ export default function LogCall({ user, mslId, config }) {
         {saving ? 'Saving...' : 'Save Call'}
       </button>
     </div>
-  )
-}
-
-function MessageChip({ msg, isSelected, onClick }) {
-  return (
-    <button className={isSelected ? 'chip selected' : 'chip'} onClick={onClick}>
-      <div>{msg}</div>
-    </button>
   )
 }
