@@ -22,7 +22,7 @@ export default function PlanManager({ mslId, mslName, config }) {
   useEffect(() => {
     if (config && config.products.length > 0 && config.medReps.length > 0) {
       // Don't set defaults - let user choose
-      setLoading(false)
+      loadPlans()
     }
   }, [config])
 
