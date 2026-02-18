@@ -5,8 +5,6 @@ export default function PlanManager({ mslId, mslName, config }) {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [medRep, setMedRep] = useState('')
   const [product, setProduct] = useState(null)
-  const [messages, setMessages] = useState([])
-  const [selected, setSelected] = useState([])
   const [saving, setSaving] = useState(false)
   const [plans, setPlans] = useState([])
   const [loading, setLoading] = useState(true)
@@ -21,13 +19,6 @@ export default function PlanManager({ mslId, mslName, config }) {
     }
   }, [config])
 
-  useEffect(() => {
-    if (product && config) {
-      const msgs = product.messages
-      setMessages(msgs)
-    }
-  }, [product])
-
   async function loadPlans() {
     try {
       const allPlans = await getAllPlans()
@@ -39,30 +30,18 @@ export default function PlanManager({ mslId, mslName, config }) {
     }
   }
 
-  function toggleMessage(i) {
-    const text = messages[i]
-    setSelected(sel => sel.includes(text) ? sel.filter(x => x !== text) : [...sel, text])
-  }
-
   async function handleSavePlan() {
-    if (!selected.length) {
-      alert('Please select at least one message')
-      return
-    }
-
     setSaving(true)
     try {
       await savePlan({
         date,
         medRep,
         productId: product.id,
-        messages: selected,
         mslId,
         mslName,
         createdOn: new Date().toLocaleString()
       })
       alert('Plan saved!')
-      setSelected([])
       await loadPlans()
     } catch (err) {
       alert('Error: ' + err.message)
@@ -104,19 +83,6 @@ export default function PlanManager({ mslId, mslName, config }) {
         }}>
           {config.products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
-
-        <label>Messages to discuss (select one or more)</label>
-        <div className="messages">
-          {messages.map((m, i) => (
-            <button 
-              key={i}
-              className={selected.includes(m) ? 'chip selected' : 'chip'} 
-              onClick={() => toggleMessage(i)}
-            >
-              {m}
-            </button>
-          ))}
-        </div>
 
         <button className="primary" onClick={handleSavePlan} disabled={saving}>
           {saving ? 'Saving Plan...' : 'Save Plan'}

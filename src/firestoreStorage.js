@@ -63,19 +63,38 @@ export async function initializeSharedData() {
   }
 }
 
-// Get shared config (MSLs, med reps, products)
-export async function getSharedConfig() {
+// Get shared config (MSLs, med reps, products) - with caching
+let configCache = null
+let cacheTime = 0
+const CACHE_DURATION = 2000 // Cache for 2 seconds
+
+export async function getSharedConfig(bypassCache = false) {
   try {
+    // Return cached config if recent and not bypassed
+    if (!bypassCache && configCache && Date.now() - cacheTime < CACHE_DURATION) {
+      return configCache
+    }
+
     const snap = await getDoc(doc(db, 'config', 'app'))
     if (!snap.exists()) {
       console.warn('Config not found, initializing...')
       await initializeSharedData()
-      return await getSharedConfig() // Retry
+      // Retry once after initialization
+      const retrySnap = await getDoc(doc(db, 'config', 'app'))
+      if (retrySnap.exists()) {
+        configCache = retrySnap.data()
+        cacheTime = Date.now()
+        return configCache
+      }
+      return MSL_DATA
     }
-    return snap.data() || MSL_DATA
+    
+    configCache = snap.data() || MSL_DATA
+    cacheTime = Date.now()
+    return configCache
   } catch (err) {
     console.error('Error fetching config:', err)
-    return MSL_DATA
+    return configCache || MSL_DATA
   }
 }
 
@@ -162,22 +181,15 @@ export async function createProduct(productName, initialMessages) {
     const snap = await getDoc(ref)
     
     if (!snap.exists()) {
-      console.warn('Config not found, initializing fresh')
-      await initializeSharedData()
-      return await createProduct(productName, initialMessages) // Retry
+      throw new Error('Config document missing. Please refresh and try again.')
     }
     
     let data = snap.data()
-    if (!data) {
-      console.warn('Config data is empty, reinitializing')
-      await initializeSharedData()
-      return await createProduct(productName, initialMessages) // Retry
+    if (!data || !Array.isArray(data.products)) {
+      throw new Error('Invalid config data. Please refresh.')
     }
     
-    let products = data.products || []
-    if (!Array.isArray(products)) {
-      products = []
-    }
+    let products = data.products.slice()
     
     const newProduct = {
       id: productId,
@@ -192,27 +204,24 @@ export async function createProduct(productName, initialMessages) {
       ]
     }
     
-    // Add to products array if not exists
+    // Add only if doesn't exist
     const existing = products.find(p => p && p.id === productId)
     if (!existing) {
       products.push(newProduct)
+      await setDoc(ref, {
+        ...data,
+        products,
+        updatedAt: serverTimestamp()
+      })
+      configCache = null // Clear cache
     }
     
-    const updatedData = {
-      ...data,
-      products,
-      msls: data.msls || [],
-      medReps: data.medReps || [],
-      updatedAt: serverTimestamp()
-    }
-    
-    await setDoc(ref, updatedData)
     return newProduct
   } catch (err) {
     console.error('Error creating product:', err)
     throw err
   }
-}
+
 
 // Add or update a med rep
 export async function addOrUpdateMedRep(medRepName, zone = '', line = '') {
@@ -221,54 +230,42 @@ export async function addOrUpdateMedRep(medRepName, zone = '', line = '') {
     const snap = await getDoc(ref)
     
     if (!snap.exists()) {
-      console.warn('Config not found, initializing fresh config')
-      await initializeSharedData()
-      return await addOrUpdateMedRep(medRepName, zone, line) // Retry
+      throw new Error('Config document missing. Please refresh and try again.')
     }
     
     let data = snap.data()
-    if (!data) {
-      console.warn('Config data is empty, reinitializing')
-      await initializeSharedData()
-      return await addOrUpdateMedRep(medRepName, zone, line) // Retry
+    if (!data || !Array.isArray(data.medReps)) {
+      throw new Error('Invalid config data. Please refresh.')
     }
     
-    // Ensure medReps array exists and is properly formatted
-    let medReps = data.medReps || []
-    if (!Array.isArray(medReps)) {
-      medReps = []
-    }
-    
-    // Convert old string format to object if needed
-    medReps = medReps.map(m => {
+    // Copy and convert med reps
+    let medReps = data.medReps.map(m => {
       if (!m) return null
       return typeof m === 'string' ? { name: m, zone: '', line: '' } : m
     }).filter(m => m !== null)
     
-    // Check if already exists and update or add
-    const existing = medReps.findIndex(m => m && m.name === medRepName)
-    if (existing >= 0) {
-      medReps[existing] = { name: medRepName, zone: zone || '', line: line || '' }
+    // Update or add
+    const idx = medReps.findIndex(m => m.name === medRepName)
+    if (idx >= 0) {
+      medReps[idx] = { name: medRepName, zone: zone || '', line: line || '' }
     } else {
       medReps.push({ name: medRepName, zone: zone || '', line: line || '' })
     }
     
-    // Ensure other required fields exist
-    const updatedData = {
+    // Save with updated data
+    await setDoc(ref, {
       ...data,
       medReps,
-      msls: data.msls || [],
-      products: data.products || [],
       updatedAt: serverTimestamp()
-    }
+    })
     
-    await setDoc(ref, updatedData)
+    configCache = null // Clear cache
     return medReps
   } catch (err) {
     console.error('Error adding med rep:', err)
     throw err
   }
-}
+
 
 // Remove a med rep
 export async function removeMedRep(medRepName) {
@@ -277,46 +274,34 @@ export async function removeMedRep(medRepName) {
     const snap = await getDoc(ref)
     
     if (!snap.exists()) {
-      console.warn('Config not found, initializing fresh')
-      await initializeSharedData()
-      return await removeMedRep(medRepName) // Retry
+      throw new Error('Config document missing. Please refresh and try again.')
     }
     
     let data = snap.data()
-    if (!data) {
-      console.warn('Config data is empty, reinitializing')
-      await initializeSharedData()
-      return await removeMedRep(medRepName) // Retry
+    if (!data || !Array.isArray(data.medReps)) {
+      throw new Error('Invalid config data. Please refresh.')
     }
     
-    let medReps = data.medReps || []
-    if (!Array.isArray(medReps)) {
-      medReps = []
-    }
-    
-    // Convert old string format to object if needed
-    medReps = medReps.map(m => {
+    let medReps = data.medReps.map(m => {
       if (!m) return null
       return typeof m === 'string' ? { name: m, zone: '', line: '' } : m
     }).filter(m => m !== null)
     
     const filteredReps = medReps.filter(m => m.name !== medRepName)
     
-    const updatedData = {
+    await setDoc(ref, {
       ...data,
       medReps: filteredReps,
-      msls: data.msls || [],
-      products: data.products || [],
       updatedAt: serverTimestamp()
-    }
+    })
     
-    await setDoc(ref, updatedData)
+    configCache = null // Clear cache
     return filteredReps
   } catch (err) {
     console.error('Error removing med rep:', err)
     throw err
   }
-}
+
 
 // Save a plan (daily call schedule)
 export async function savePlan(plan) {
