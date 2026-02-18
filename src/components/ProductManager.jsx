@@ -57,7 +57,7 @@ export default function ProductManager({ config, onProductAdded }) {
       <h2>Products</h2>
       <div className="muted">Total products: {config?.products?.length || 0}</div>
 
-      {showForm && !editingId ? (
+      {showForm ? (
         <div style={{marginTop: 16, paddingBottom: 16, borderBottom: '1px solid #eee'}}>
           <h3>Add New Product</h3>
           <label>Product Name</label>
