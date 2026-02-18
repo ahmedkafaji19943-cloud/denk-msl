@@ -3,6 +3,8 @@ import { updateMessagesForMSL, getMessagesForMSL, addMessageToProduct } from '..
 
 export default function MessagesEdit({ mslId, config }) {
   const [product, setProduct] = useState(null)
+  const [productSearch, setProductSearch] = useState('')
+  const [showProductDropdown, setShowProductDropdown] = useState(false)
   const [messages, setMessages] = useState([])
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -10,7 +12,7 @@ export default function MessagesEdit({ mslId, config }) {
 
   useEffect(() => {
     if (config && config.products.length > 0) {
-      setProduct(config.products[0])
+      // Don't set defaults - let user choose
       setLoading(false)
     }
   }, [config])
@@ -57,38 +59,88 @@ export default function MessagesEdit({ mslId, config }) {
     }
   }
 
-  if (loading || !config || !product) return <div className="card">Loading...</div>
+  if (loading || !config) return <div className="card">Loading...</div>
+
+  const filteredProducts = config.products.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()))
 
   return (
     <div className="card">
       <h2>Edit Messages</h2>
-      <label>Product</label>
-      <select value={product.id} onChange={e => {
-        const p = config.products.find(x => x.id === e.target.value)
-        setProduct(p)
-      }}>
-        {config.products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-      </select>
+      
+      <label>Select Product</label>
+      <div style={{position: 'relative'}}>
+        <input
+          type="text"
+          placeholder="Search product..."
+          value={productSearch || product?.name || ''}
+          onChange={e => setProductSearch(e.target.value)}
+          onFocus={() => setShowProductDropdown(true)}
+          onBlur={() => setTimeout(() => setShowProductDropdown(false), 150)}
+          style={{width: '100%', padding: '8px', fontSize: '1em'}}
+        />
+        {showProductDropdown && (
+          <div style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            border: '1px solid #ccc',
+            borderRadius: '4px',
+            background: 'white',
+            maxHeight: '200px',
+            overflowY: 'auto',
+            zIndex: 10,
+            marginTop: '4px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+          }}>
+            {filteredProducts.length > 0 ? filteredProducts.map(p => (
+              <div
+                key={p.id}
+                onClick={() => {
+                  setProduct(p)
+                  setProductSearch('')
+                  setShowProductDropdown(false)
+                }}
+                style={{
+                  padding: '10px 12px',
+                  cursor: 'pointer',
+                  background: product?.id === p.id ? '#FEED00' : 'white',
+                  borderBottom: '1px solid #f0f0f0',
+                  fontSize: '0.95em'
+                }}
+              >
+                {p.name}
+              </div>
+            )) : (
+              <div style={{padding: '10px 12px', color: '#999'}}>No matches</div>
+            )}
+          </div>
+        )}
+      </div>
 
-      <h3>Your Messages ({messages.length})</h3>
-      {messages.map((m, i) => (
-        <div key={i} className="msg-edit">
-          <small>{String.fromCharCode(65 + i)}.</small>
-          <textarea value={m} onChange={e => change(i, e.target.value)} />
-        </div>
-      ))}
-      <button className="primary" onClick={save} disabled={saving}>
-        {saving ? 'Saving...' : 'Save All Messages'}
-      </button>
+      {product && (
+        <>
+          <h3 style={{marginTop: 20}}>Your Messages for {product.name} ({messages.length})</h3>
+          {messages.map((m, i) => (
+            <div key={i} className="msg-edit">
+              <small>{String.fromCharCode(65 + i)}.</small>
+              <textarea value={m} onChange={e => change(i, e.target.value)} />
+            </div>
+          ))}
+          <button className="primary" onClick={save} disabled={saving}>
+            {saving ? 'Saving...' : 'Save All Messages'}
+          </button>
 
-      <h3 style={{marginTop: 24}}>Add New Message</h3>
-      <textarea 
-        value={newMessage} 
-        onChange={e => setNewMessage(e.target.value)} 
-        placeholder="Enter a new key message or benefit..."
-        style={{height: 80}}
-      />
-      <button className="secondary" onClick={addNewMessage}>+ Add Message</button>
+          <h3 style={{marginTop: 24}}>Add New Message to {product.name}</h3>
+          <textarea 
+            value={newMessage} 
+            onChange={e => setNewMessage(e.target.value)} 
+            placeholder="Enter a new key message or benefit..."
+            style={{height: 80}}
+          />
+          <button className="secondary" onClick={addNewMessage}>+ Add Message</button>
+        </>
+      )}
     </div>
   )
 }
