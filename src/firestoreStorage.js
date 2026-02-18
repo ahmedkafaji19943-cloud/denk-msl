@@ -146,7 +146,13 @@ export async function createProduct(productName, initialMessages) {
     const productId = productName.toLowerCase().replace(/\s+/g, '_')
     const ref = doc(db, 'config', 'app')
     const snap = await getDoc(ref)
+    
+    if (!snap.exists()) {
+      throw new Error('Config not initialized. Please refresh the page.')
+    }
+    
     const data = snap.data()
+    const products = data.products || []
     
     const newProduct = {
       id: productId,
@@ -162,15 +168,63 @@ export async function createProduct(productName, initialMessages) {
     }
     
     // Add to products array if not exists
-    const existing = data.products.find(p => p.id === productId)
+    const existing = products.find(p => p.id === productId)
     if (!existing) {
-      data.products.push(newProduct)
-      await setDoc(ref, data)
+      products.push(newProduct)
+      await setDoc(ref, { ...data, products })
     }
     
     return newProduct
   } catch (err) {
     console.error('Error creating product:', err)
+    throw err
+  }
+}
+
+// Add or update a med rep
+export async function addOrUpdateMedRep(medRepName) {
+  try {
+    const ref = doc(db, 'config', 'app')
+    const snap = await getDoc(ref)
+    
+    if (!snap.exists()) {
+      throw new Error('Config not initialized. Please refresh the page.')
+    }
+    
+    const data = snap.data()
+    const medReps = data.medReps || []
+    
+    // Check if already exists
+    if (!medReps.includes(medRepName)) {
+      medReps.push(medRepName)
+      await setDoc(ref, { ...data, medReps })
+    }
+    
+    return medReps
+  } catch (err) {
+    console.error('Error adding med rep:', err)
+    throw err
+  }
+}
+
+// Remove a med rep
+export async function removeMedRep(medRepName) {
+  try {
+    const ref = doc(db, 'config', 'app')
+    const snap = await getDoc(ref)
+    
+    if (!snap.exists()) {
+      throw new Error('Config not initialized.')
+    }
+    
+    const data = snap.data()
+    const medReps = data.medReps || []
+    const filteredReps = medReps.filter(m => m !== medRepName)
+    
+    await setDoc(ref, { ...data, medReps: filteredReps })
+    return filteredReps
+  } catch (err) {
+    console.error('Error removing med rep:', err)
     throw err
   }
 }
