@@ -384,7 +384,7 @@ export async function removeMedRep(medRepName) {
     console.error('Error removing med rep:', err)
     throw err
   }
-
+}
 
 // Save a plan (daily call schedule)
 export async function savePlan(plan) {
