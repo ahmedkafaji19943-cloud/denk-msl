@@ -64,10 +64,16 @@ export default function LogCall({ user, mslId, config }) {
         note 
       })
       alert('Call saved!')
+      
+      // Immediately update local history to reflect the newly saved messages
+      const newHistory = { ...usageHistory }
+      selected.forEach(msg => {
+        newHistory[msg] = true // Mark as used
+      })
+      setUsageHistory(newHistory)
+      
       setSelected([])
       setNote('')
-      // Refresh history
-      await checkMessageHistory()
     } catch (err) {
       alert('Error: ' + err.message)
     } finally {
