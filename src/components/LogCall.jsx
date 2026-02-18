@@ -15,7 +15,10 @@ export default function LogCall({ user, mslId, config }) {
   useEffect(() => {
     if (config && config.products.length > 0 && config.medReps.length > 0) {
       setProduct(config.products[0])
-      setMedRep(config.medReps[0])
+      // Extract name from med rep (handle both string and object format)
+      const firstMedRep = config.medReps[0]
+      const medRepName = typeof firstMedRep === 'string' ? firstMedRep : firstMedRep.name
+      setMedRep(medRepName)
       setLoading(false)
     }
   }, [config])
@@ -83,13 +86,22 @@ export default function LogCall({ user, mslId, config }) {
 
   if (loading || !config || !product) return <div className="card">Loading...</div>
 
+  // Convert med reps to array of names (handle old string or new object format)
+  const medRepNames = (config.medReps || []).map(m => typeof m === 'string' ? m : m.name)
+  const selectedMedRepObj = (config.medReps || []).find(m => (typeof m === 'string' ? m : m.name) === medRep)
+  const medRepDetails = typeof selectedMedRepObj === 'string' ? { name: selectedMedRepObj, zone: '', line: '' } : (selectedMedRepObj || { name: medRep, zone: '', line: '' })
+
   return (
     <div className="card">
       <h2>Log Call</h2>
       <label>Med Rep</label>
       <select value={medRep} onChange={e => setMedRep(e.target.value)}>
-        {config.medReps.map(m => <option key={m} value={m}>{m}</option>)}
+        {medRepNames.map(m => <option key={m} value={m}>{m}</option>)}
       </select>
+
+      {medRepDetails.zone && <div className="muted" style={{marginTop: 8}}>
+        <small>📍 Zone: {medRepDetails.zone}{medRepDetails.line ? ` • Dept: ${medRepDetails.line}` : ''}</small>
+      </div>}
 
       <label>Product</label>
       <select value={product.id} onChange={e => {

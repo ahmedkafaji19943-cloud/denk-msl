@@ -4,9 +4,13 @@ import { addOrUpdateMedRep, removeMedRep } from '../firestoreStorage'
 export default function MedRepManager({ config, onMedRepsUpdated }) {
   const [showForm, setShowForm] = useState(false)
   const [newMedRepName, setNewMedRepName] = useState('')
+  const [newZone, setNewZone] = useState('')
+  const [newLine, setNewLine] = useState('')
   const [saving, setSaving] = useState(false)
-  const [editingIndex, setEditingIndex] = useState(null)
-  const [editValue, setEditValue] = useState('')
+  const [editingMedRep, setEditingMedRep] = useState(null)
+  const [editName, setEditName] = useState('')
+  const [editZone, setEditZone] = useState('')
+  const [editLine, setEditLine] = useState('')
 
   async function handleAddMedRep() {
     if (!newMedRepName.trim()) {
@@ -16,10 +20,31 @@ export default function MedRepManager({ config, onMedRepsUpdated }) {
 
     setSaving(true)
     try {
-      await addOrUpdateMedRep(newMedRepName.trim())
+      await addOrUpdateMedRep(newMedRepName.trim(), newZone.trim(), newLine.trim())
       alert('Med rep added!')
       setNewMedRepName('')
+      setNewZone('')
+      setNewLine('')
       setShowForm(false)
+      onMedRepsUpdated()
+    } catch (err) {
+      alert('Error: ' + err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleSaveEdit() {
+    if (!editName.trim()) {
+      alert('Please enter a med rep name')
+      return
+    }
+
+    setSaving(true)
+    try {
+      await addOrUpdateMedRep(editName.trim(), editZone.trim(), editLine.trim())
+      alert('Med rep updated!')
+      setEditingMedRep(null)
       onMedRepsUpdated()
     } catch (err) {
       alert('Error: ' + err.message)
@@ -43,7 +68,7 @@ export default function MedRepManager({ config, onMedRepsUpdated }) {
     }
   }
 
-  const medReps = config?.medReps || []
+  const medReps = (config?.medReps || []).map(m => typeof m === 'string' ? { name: m, zone: '', line: '' } : m)
 
   return (
     <div className="card">
@@ -56,9 +81,23 @@ export default function MedRepManager({ config, onMedRepsUpdated }) {
           <label>Med Rep Name</label>
           <input 
             type="text" 
-            placeholder="e.g., John Smith"
+            placeholder="e.g., Dr. Ahmed Hassan"
             value={newMedRepName}
             onChange={e => setNewMedRepName(e.target.value)}
+          />
+          <label>Zone</label>
+          <input 
+            type="text" 
+            placeholder="e.g., North, Central, South"
+            value={newZone}
+            onChange={e => setNewZone(e.target.value)}
+          />
+          <label>Line / Department</label>
+          <input 
+            type="text" 
+            placeholder="e.g., Cardiology, Internal Medicine"
+            value={newLine}
+            onChange={e => setNewLine(e.target.value)}
           />
 
           <div style={{display: 'flex', gap: 8, marginTop: 12}}>
@@ -75,18 +114,47 @@ export default function MedRepManager({ config, onMedRepsUpdated }) {
       )}
 
       <h3 style={{marginTop: 24}}>Current Med Reps</h3>
+      {editingMedRep ? (
+        <div style={{marginBottom: 20}}>
+          <h4>Edit Med Rep</h4>
+          <label>Name</label>
+          <input value={editName} onChange={e => setEditName(e.target.value)} />
+          <label>Zone</label>
+          <input value={editZone} onChange={e => setEditZone(e.target.value)} />
+          <label>Line / Department</label>
+          <input value={editLine} onChange={e => setEditLine(e.target.value)} />
+          <div style={{display: 'flex', gap: 8, marginTop: 12}}>
+            <button className="primary" onClick={handleSaveEdit} disabled={saving}>
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+            <button className="secondary" onClick={() => setEditingMedRep(null)}>Cancel</button>
+          </div>
+        </div>
+      ) : null}
+
       {medReps.length > 0 ? (
         <ul>
           {medReps.map((rep, i) => (
-            <li key={i} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-              <span><strong>{rep}</strong></span>
-              <button 
-                className="secondary" 
-                onClick={() => handleRemove(rep)}
-                style={{padding: 4, fontSize: '0.85em'}}
-              >
-                Remove
-              </button>
+            <li key={i} style={{padding: '10px', border: '1px solid #eee', borderRadius: 6, marginBottom: 8}}>
+              <div><strong>{rep.name}</strong></div>
+              {rep.zone && <div className="muted"><small>Zone: {rep.zone}</small></div>}
+              {rep.line && <div className="muted"><small>Line: {rep.line}</small></div>}
+              <div style={{display: 'flex', gap: 8, marginTop: 6}}>
+                <button 
+                  className="secondary" 
+                  onClick={() => { setEditingMedRep(rep.name); setEditName(rep.name); setEditZone(rep.zone); setEditLine(rep.line); }}
+                  style={{padding: 4, fontSize: '0.85em'}}
+                >
+                  Edit
+                </button>
+                <button 
+                  className="secondary" 
+                  onClick={() => handleRemove(rep.name)}
+                  style={{padding: 4, fontSize: '0.85em'}}
+                >
+                  Remove
+                </button>
+              </div>
             </li>
           ))}
         </ul>

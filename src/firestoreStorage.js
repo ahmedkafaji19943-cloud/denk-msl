@@ -19,7 +19,13 @@ const MSL_DATA = {
     { id: 'msl3', name: 'Ahmed Rabah', email: 'rabah@denk.local' },
     { id: 'msl4', name: 'Ali Kamil', email: 'ali@denk.local' }
   ],
-  medReps: ['Yaman Ali', 'Mohammed Luqman', 'Erjwan Thaar', 'Sabreen Majid', 'Ibraheem Jumaa'],
+  medReps: [
+    { name: 'Yaman Ali', zone: 'North', line: '' },
+    { name: 'Mohammed Luqman', zone: 'Central', line: '' },
+    { name: 'Erjwan Thaar', zone: 'South', line: '' },
+    { name: 'Sabreen Majid', zone: 'East', line: '' },
+    { name: 'Ibraheem Jumaa', zone: 'West', line: '' }
+  ],
   products: [
     {
       id: 'panto',
@@ -48,6 +54,9 @@ export async function initializeSharedData() {
         products: MSL_DATA.products,
         createdAt: serverTimestamp()
       })
+      console.log('Config initialized')
+    } else {
+      console.log('Config already exists')
     }
   } catch (err) {
     console.error('Init error:', err)
@@ -58,6 +67,11 @@ export async function initializeSharedData() {
 export async function getSharedConfig() {
   try {
     const snap = await getDoc(doc(db, 'config', 'app'))
+    if (!snap.exists()) {
+      console.warn('Config not found, initializing...')
+      await initializeSharedData()
+      return await getSharedConfig() // Retry
+    }
     return snap.data() || MSL_DATA
   } catch (err) {
     console.error('Error fetching config:', err)
@@ -182,7 +196,7 @@ export async function createProduct(productName, initialMessages) {
 }
 
 // Add or update a med rep
-export async function addOrUpdateMedRep(medRepName) {
+export async function addOrUpdateMedRep(medRepName, zone = '', line = '') {
   try {
     const ref = doc(db, 'config', 'app')
     const snap = await getDoc(ref)
@@ -192,14 +206,20 @@ export async function addOrUpdateMedRep(medRepName) {
     }
     
     const data = snap.data()
-    const medReps = data.medReps || []
+    let medReps = data.medReps || []
+    
+    // Convert old string format to object if needed
+    medReps = medReps.map(m => typeof m === 'string' ? { name: m, zone: '', line: '' } : m)
     
     // Check if already exists
-    if (!medReps.includes(medRepName)) {
-      medReps.push(medRepName)
-      await setDoc(ref, { ...data, medReps })
+    const existing = medReps.findIndex(m => m.name === medRepName)
+    if (existing >= 0) {
+      medReps[existing] = { name: medRepName, zone, line }
+    } else {
+      medReps.push({ name: medRepName, zone, line })
     }
     
+    await setDoc(ref, { ...data, medReps })
     return medReps
   } catch (err) {
     console.error('Error adding med rep:', err)
@@ -218,14 +238,43 @@ export async function removeMedRep(medRepName) {
     }
     
     const data = snap.data()
-    const medReps = data.medReps || []
-    const filteredReps = medReps.filter(m => m !== medRepName)
+    let medReps = data.medReps || []
+    
+    // Convert old string format to object if needed
+    medReps = medReps.map(m => typeof m === 'string' ? { name: m, zone: '', line: '' } : m)
+    
+    const filteredReps = medReps.filter(m => m.name !== medRepName)
     
     await setDoc(ref, { ...data, medReps: filteredReps })
     return filteredReps
   } catch (err) {
     console.error('Error removing med rep:', err)
     throw err
+  }
+}
+
+// Save a plan (daily call schedule)
+export async function savePlan(plan) {
+  try {
+    const plansRef = collection(db, 'plans')
+    await addDoc(plansRef, {
+      ...plan,
+      createdAt: serverTimestamp()
+    })
+  } catch (err) {
+    console.error('Error saving plan:', err)
+    throw err
+  }
+}
+
+// Get all plans
+export async function getAllPlans() {
+  try {
+    const snap = await getDocs(collection(db, 'plans'))
+    return snap.docs.map(d => ({ ...d.data(), id: d.id }))
+  } catch (err) {
+    console.error('Error fetching plans:', err)
+    return []
   }
 }
 
