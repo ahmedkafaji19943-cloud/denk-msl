@@ -76,11 +76,10 @@ export default function App() {
             <div className="tabs">
               <button onClick={() => setTab('log')} className={tab==='log'? 'active':''}>Log Call</button>
               <button onClick={() => setTab('plan')} className={tab==='plan'? 'active':''}>Plan</button>
-              <button onClick={() => setTab('reports')} className={tab==='reports'? 'active':''}>Reports</button>
               <button onClick={() => setTab('edit')} className={tab==='edit'? 'active':''}>Messages</button>
               <button onClick={() => setTab('products')} className={tab==='products'? 'active':''}>Products</button>
               <button onClick={() => setTab('medreps')} className={tab==='medreps'? 'active':''}>Med Reps</button>
-              {mslInfo?.manager && <button onClick={() => setTab('team')} className={tab==='team'? 'active':''}>Team</button>}
+              {mslInfo?.manager && <button onClick={() => setTab('mslreport')} className={tab==='mslreport'? 'active':''}>MSL Report</button>}
             </div>
 
             <div className="meta">
@@ -96,18 +95,7 @@ export default function App() {
                 {tab==='edit' && <MessagesEdit mslId={mslInfo.id} config={config} />}
                 {tab==='products' && <ProductManager config={config} onProductAdded={reloadConfig} />}
                 {tab==='medreps' && <MedRepManager config={config} onMedRepsUpdated={reloadConfig} />}
-                {tab==='reports' && (
-                  <div className="card">
-                    <h2>All Reports</h2>
-                    {config.msls.map(msl => (
-                      <div key={msl.id} style={{marginBottom: 20, paddingBottom: 20, borderBottom: '1px solid #eee'}}>
-                        <h3>{msl.name}</h3>
-                        <Reports mslId={msl.id} mslName={msl.name} isManager={false} config={config} />
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {tab==='team' && mslInfo?.manager && <Reports mslId={mslInfo.id} mslName={mslInfo.name} isManager={true} config={config} />}
+                {tab==='mslreport' && mslInfo?.manager && <Reports mslId={mslInfo.id} mslName={mslInfo.name} isManager={true} config={config} />}
               </>
             )}
           </div>
