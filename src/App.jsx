@@ -10,6 +10,7 @@ import ProductManager from './components/ProductManager'
 import MedRepManager from './components/MedRepManager'
 import PlanManager from './components/PlanManager'
 
+// Denk MSL Main App Component
 export default function App() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
