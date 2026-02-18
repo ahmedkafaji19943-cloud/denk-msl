@@ -93,23 +93,20 @@ export default function PlanManager({ mslId, mslName, config }) {
         <h2>Team's Daily Plans</h2>
         {Object.keys(groupedPlans).sort().reverse().map(planDate => (
           <div key={planDate} style={{marginBottom: 20}}>
-            <h3 style={{marginTop: 0}}>{new Date(planDate + 'T00:00:00').toLocaleDateString()}</h3>
+            <h3 style={{marginTop: 0, color: '#FEED00'}}>📅 {new Date(planDate + 'T00:00:00').toLocaleDateString()}</h3>
             {groupedPlans[planDate].map((plan, i) => (
-              <div key={i} style={{padding: 12, background: '#f9f9f9', borderRadius: 6, marginBottom: 8}}>
-                <div><strong>{plan.mslName}</strong> → <strong>{plan.medRep}</strong></div>
-                <div className="muted"><small>{plan.productId}</small></div>
-                <div style={{marginTop: 8}}>
-                  {plan.messages.map((msg, j) => (
-                    <div key={j} style={{fontSize: '0.9em', marginTop: 4, paddingLeft: 8, borderLeft: '2px solid #FEED00'}}>
-                      {msg}
-                    </div>
-                  ))}
+              <div key={i} style={{padding: 12, background: '#f9f9f9', borderRadius: 6, marginBottom: 8, borderLeft: '4px solid #FEED00'}}>
+                <div style={{marginBottom: 8}}>
+                  <strong style={{fontSize: '1.1em'}}>{plan.mslName}</strong> 
+                  <span className="muted" style={{marginLeft: 8}}>→</span> 
+                  <strong style={{marginLeft: 8}}>{plan.medRep}</strong>
                 </div>
+                <div className="muted"><small>Product: <strong>{plan.productId}</strong></small></div>
               </div>
             ))}
           </div>
         ))}
-        {Object.keys(groupedPlans).length === 0 && <div className="muted">No plans yet</div>}
+        {Object.keys(groupedPlans).length === 0 && <div className="muted">No plans scheduled yet</div>}
       </div>
     </div>
   )

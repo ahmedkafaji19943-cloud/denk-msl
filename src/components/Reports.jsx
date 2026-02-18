@@ -75,22 +75,6 @@ function ReportContent({ calls }) {
       ) : (
         <div className="muted">No calls logged yet</div>
       )}
-
-      <h3>Knowledge gaps (scores ≤4)</h3>
-      {calls.filter(c=>c.score<=4).length > 0 ? (
-        <ul>
-          {calls.filter(c=>c.score<=4).map(c => (
-            <li key={c.id}>
-              <strong>{c.medRep}</strong> — {c.productId}<br/>
-              <small className="muted">{c.messages.join('; ')}</small><br/>
-              Score: <strong>{c.score}/10</strong>
-              {c.note && <div>{c.note}</div>}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <div className="muted">No knowledge gaps identified</div>
-      )}
     </>
   )
 }
