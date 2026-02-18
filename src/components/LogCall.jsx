@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react'
 import { getSharedConfig, saveCall, getMessagesForMSL, wasMessageUsedWithMedRep } from '../firestoreStorage'
 
 export default function LogCall({ user, mslId, config }) {
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [medRep, setMedRep] = useState('')
+  const [medRepSearch, setMedRepSearch] = useState('')
   const [product, setProduct] = useState(null)
+  const [productSearch, setProductSearch] = useState('')
   const [messages, setMessages] = useState([])
   const [selected, setSelected] = useState([])
   const [score, setScore] = useState(8)
@@ -11,14 +14,12 @@ export default function LogCall({ user, mslId, config }) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [usageHistory, setUsageHistory] = useState({})
+  const [showMedRepDropdown, setShowMedRepDropdown] = useState(false)
+  const [showProductDropdown, setShowProductDropdown] = useState(false)
 
   useEffect(() => {
     if (config && config.products.length > 0 && config.medReps.length > 0) {
-      setProduct(config.products[0])
-      // Extract name from med rep (handle both string and object format)
-      const firstMedRep = config.medReps[0]
-      const medRepName = typeof firstMedRep === 'string' ? firstMedRep : firstMedRep.name
-      setMedRep(medRepName)
+      // Don't set defaults - let user choose
       setLoading(false)
     }
   }, [config])
@@ -55,16 +56,20 @@ export default function LogCall({ user, mslId, config }) {
   }
 
   async function submit() {
+    if (!medRep) return alert('Choose a med rep')
+    if (!product) return alert('Choose a product')
     if (!selected.length) return alert('Choose at least one message')
     setSaving(true)
     try {
       await saveCall({ 
+        date,
         mslId, 
         medRep, 
         productId: product.id, 
         messages: selected, 
         score, 
-        note 
+        note,
+        createdOn: new Date().toLocaleString()
       })
       alert('Call saved!')
       
@@ -84,48 +89,149 @@ export default function LogCall({ user, mslId, config }) {
     }
   }
 
-  if (loading || !config || !product) return <div className="card">Loading...</div>
+  if (loading || !config) return <div className="card">Loading...</div>
 
   // Convert med reps to array of names (handle old string or new object format)
   const medRepNames = (config.medReps || []).map(m => typeof m === 'string' ? m : m.name)
+  const filteredMedReps = medRepNames.filter(m => m.toLowerCase().includes(medRepSearch.toLowerCase()))
+  
+  const filteredProducts = config.products.filter(p => p.name.toLowerCase().includes(productSearch.toLowerCase()))
+  
   const selectedMedRepObj = (config.medReps || []).find(m => (typeof m === 'string' ? m : m.name) === medRep)
   const medRepDetails = typeof selectedMedRepObj === 'string' ? { name: selectedMedRepObj, zone: '', line: '' } : (selectedMedRepObj || { name: medRep, zone: '', line: '' })
 
   return (
     <div className="card">
       <h2>Log Call</h2>
-      <label>Med Rep</label>
-      <select value={medRep} onChange={e => setMedRep(e.target.value)}>
-        {medRepNames.map(m => <option key={m} value={m}>{m}</option>)}
-      </select>
+      
+      <label>Date</label>
+      <input type="date" value={date} onChange={e => setDate(e.target.value)} />
 
-      {medRepDetails.zone && <div className="muted" style={{marginTop: 8}}>
+      <label>Med Rep</label>
+      <div style={{position: 'relative'}}>
+        <input
+          type="text"
+          placeholder="Search med rep..."
+          value={medRepSearch || medRep}
+          onChange={e => setMedRepSearch(e.target.value)}
+          onFocus={() => setShowMedRepDropdown(true)}
+          onBlur={() => setTimeout(() => setShowMedRepDropdown(false), 150)}
+          style={{width: '100%', padding: '8px', fontSize: '1em'}}
+        />
+        {showMedRepDropdown && (
+          <div style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            border: '1px solid #ccc',
+            borderRadius: '4px',
+            background: 'white',
+            maxHeight: '200px',
+            overflowY: 'auto',
+            zIndex: 10,
+            marginTop: '4px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+          }}>
+            {filteredMedReps.length > 0 ? filteredMedReps.map(m => (
+              <div
+                key={m}
+                onClick={() => {
+                  setMedRep(m)
+                  setMedRepSearch('')
+                  setShowMedRepDropdown(false)
+                }}
+                style={{
+                  padding: '10px 12px',
+                  cursor: 'pointer',
+                  background: medRep === m ? '#FEED00' : 'white',
+                  borderBottom: '1px solid #f0f0f0',
+                  fontSize: '0.95em'
+                }}
+              >
+                {m}
+              </div>
+            )) : (
+              <div style={{padding: '10px 12px', color: '#999'}}>No matches</div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {medRep && medRepDetails.zone && <div className="muted" style={{marginTop: 8}}>
         <small>📍 Zone: {medRepDetails.zone}{medRepDetails.line ? ` • Dept: ${medRepDetails.line}` : ''}</small>
       </div>}
 
       <label>Product</label>
-      <select value={product.id} onChange={e => {
-        const p = config.products.find(x => x.id === e.target.value)
-        setProduct(p)
-      }}>
-        {config.products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-      </select>
-
-      <label>Messages (tap to select)</label>
-      <div className="messages">
-        {messages.map((m, i) => (
-          <button 
-            key={i}
-            className={selected.includes(m) ? 'chip selected' : 'chip'} 
-            onClick={() => toggleMessage(i)}
-          >
-            <div>{m}</div>
-            <small className="badge">
-              {usageHistory[m] ? `✓ Used with ${medRep}` : 'New for this rep'}
-            </small>
-          </button>
-        ))}
+      <div style={{position: 'relative'}}>
+        <input
+          type="text"
+          placeholder="Search product..."
+          value={productSearch || product?.name || ''}
+          onChange={e => setProductSearch(e.target.value)}
+          onFocus={() => setShowProductDropdown(true)}
+          onBlur={() => setTimeout(() => setShowProductDropdown(false), 150)}
+          style={{width: '100%', padding: '8px', fontSize: '1em'}}
+        />
+        {showProductDropdown && (
+          <div style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            border: '1px solid #ccc',
+            borderRadius: '4px',
+            background: 'white',
+            maxHeight: '200px',
+            overflowY: 'auto',
+            zIndex: 10,
+            marginTop: '4px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+          }}>
+            {filteredProducts.length > 0 ? filteredProducts.map(p => (
+              <div
+                key={p.id}
+                onClick={() => {
+                  setProduct(p)
+                  setProductSearch('')
+                  setShowProductDropdown(false)
+                }}
+                style={{
+                  padding: '10px 12px',
+                  cursor: 'pointer',
+                  background: product?.id === p.id ? '#FEED00' : 'white',
+                  borderBottom: '1px solid #f0f0f0',
+                  fontSize: '0.95em'
+                }}
+              >
+                {p.name}
+              </div>
+            )) : (
+              <div style={{padding: '10px 12px', color: '#999'}}>No matches</div>
+            )}
+          </div>
+        )}
       </div>
+
+      {product && (
+        <>
+          <label>Messages (tap to select)</label>
+          <div className="messages">
+            {messages.map((m, i) => (
+              <button 
+                key={i}
+                className={selected.includes(m) ? 'chip selected' : 'chip'} 
+                onClick={() => toggleMessage(i)}
+              >
+                <div>{m}</div>
+                <small className="badge">
+                  {usageHistory[m] ? `✓ Used with ${medRep}` : 'New for this rep'}
+                </small>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
       <label>Assessment: {score}</label>
       <input type="range" min="0" max="10" value={score} onChange={e => setScore(Number(e.target.value))} />
