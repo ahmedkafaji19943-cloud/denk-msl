@@ -1,12 +1,61 @@
-import React from 'react'
-import { getState } from '../storage'
+import React, { useState, useEffect } from 'react'
+import { getCallsForMSL, getAllCalls } from '../firestoreStorage'
 
 function avg(arr) { return arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(1) : '-' }
 
-export default function Reports({ msl }) {
-  const s = getState()
-  const calls = s.calls.filter(c => c.mslId === msl.id)
+export default function Reports({ mslId, mslName, isManager, config }) {
+  const [calls, setCalls] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [teamReports, setTeamReports] = useState({})
 
+  useEffect(() => {
+    loadReports()
+  }, [])
+
+  async function loadReports() {
+    if (isManager) {
+      const allCalls = await getAllCalls()
+      setTeamReports(groupCallsByMSL(allCalls, config))
+    } else {
+      const mslCalls = await getCallsForMSL(mslId)
+      setCalls(mslCalls)
+    }
+    setLoading(false)
+  }
+
+  function groupCallsByMSL(allCalls, cfg) {
+    const groups = {}
+    cfg.msls.forEach(msl => {
+      groups[msl.id] = { name: msl.name, calls: allCalls.filter(c => c.mslId === msl.id) }
+    })
+    return groups
+  }
+
+  if (loading) return <div className="card">Loading reports...</div>
+
+  if (isManager) {
+    return (
+      <div className="card">
+        <h2>Team Reports</h2>
+        {Object.values(teamReports).map(team => (
+          <div key={team.name} className="team-item">
+            <h3>{team.name}</h3>
+            <ReportContent calls={team.calls} />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div className="card">
+      <h2>My Report</h2>
+      <ReportContent calls={calls} />
+    </div>
+  )
+}
+
+function ReportContent({ calls }) {
   const byMedRep = {}
   calls.forEach(c => {
     byMedRep[c.medRep] = byMedRep[c.medRep] || []
@@ -14,22 +63,34 @@ export default function Reports({ msl }) {
   })
 
   return (
-    <div className="card">
-      <h2>Report — {msl.name}</h2>
+    <>
       <div className="muted">Total calls: {calls.length}</div>
       <h3>Scores by Med Rep</h3>
-      <ul>
-        {Object.keys(byMedRep).map(k => (
-          <li key={k}>{k}: {avg(byMedRep[k])}</li>
-        ))}
-      </ul>
+      {Object.keys(byMedRep).length > 0 ? (
+        <ul>
+          {Object.keys(byMedRep).map(k => (
+            <li key={k}><strong>{k}:</strong> {avg(byMedRep[k])}</li>
+          ))}
+        </ul>
+      ) : (
+        <div className="muted">No calls logged yet</div>
+      )}
 
       <h3>Knowledge gaps (scores ≤4)</h3>
-      <ul>
-        {calls.filter(c=>c.score<=4).map(c => (
-          <li key={c.id}>{c.medRep} — {c.productId} — {c.messages.join('; ')} ({c.score})</li>
-        ))}
-      </ul>
-    </div>
+      {calls.filter(c=>c.score<=4).length > 0 ? (
+        <ul>
+          {calls.filter(c=>c.score<=4).map(c => (
+            <li key={c.id}>
+              <strong>{c.medRep}</strong> — {c.productId}<br/>
+              <small className="muted">{c.messages.join('; ')}</small><br/>
+              Score: <strong>{c.score}/10</strong>
+              {c.note && <div>{c.note}</div>}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="muted">No knowledge gaps identified</div>
+      )}
+    </>
   )
 }

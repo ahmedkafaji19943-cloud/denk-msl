@@ -1,18 +1,38 @@
-import React, { useState } from 'react'
-import { getState, saveCall, getMessagesFor, getAllCalls } from '../storage'
+import React, { useState, useEffect } from 'react'
+import { getSharedConfig, saveCall, getMessagesForMSL, getAllCalls } from '../firestoreStorage'
 
-export default function LogCall({ msl }) {
-  const s = getState()
-  const [medRep, setMedRep] = useState(s.medReps[0])
-  const [product] = useState(s.products[0])
-  const [messages, setMessages] = useState(getMessagesFor(product.id, msl.id))
+export default function LogCall({ user, mslId, config }) {
+  const [medRep, setMedRep] = useState('')
+  const [product, setProduct] = useState(null)
+  const [messages, setMessages] = useState([])
   const [selected, setSelected] = useState([])
   const [score, setScore] = useState(8)
   const [note, setNote] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
 
-  const usedBefore = (msg) => {
-    const calls = getAllCalls()
-    return calls.some(c => c.medRep === medRep && c.productId === product.id && c.messages?.includes(msg))
+  useEffect(() => {
+    if (config && config.products.length > 0 && config.medReps.length > 0) {
+      setProduct(config.products[0])
+      setMedRep(config.medReps[0])
+      setLoading(false)
+    }
+  }, [config])
+
+  useEffect(() => {
+    if (product) {
+      loadMessages()
+    }
+  }, [product])
+
+  async function loadMessages() {
+    const msgs = await getMessagesForMSL(mslId, product.id, product.messages)
+    setMessages(msgs)
+  }
+
+  async function usedBefore(msg) {
+    const allCalls = await getAllCalls()
+    return allCalls.some(c => c.medRep === medRep && c.productId === product.id && c.messages?.includes(msg))
   }
 
   function toggleMessage(i) {
@@ -20,32 +40,50 @@ export default function LogCall({ msl }) {
     setSelected(sel => sel.includes(text) ? sel.filter(x => x !== text) : [...sel, text])
   }
 
-  function submit() {
+  async function submit() {
     if (!selected.length) return alert('Choose at least one message')
-    saveCall({ mslId: msl.id, medRep, productId: product.id, messages: selected, score, note, time: new Date().toISOString() })
-    alert('Saved')
-    setSelected([])
-    setNote('')
+    setSaving(true)
+    try {
+      await saveCall({ 
+        mslId, 
+        medRep, 
+        productId: product.id, 
+        messages: selected, 
+        score, 
+        note 
+      })
+      alert('Call saved!')
+      setSelected([])
+      setNote('')
+    } catch (err) {
+      alert('Error: ' + err.message)
+    } finally {
+      setSaving(false)
+    }
   }
+
+  if (loading || !config || !product) return <div className="card">Loading...</div>
 
   return (
     <div className="card">
       <h2>Log Call</h2>
       <label>Med Rep</label>
       <select value={medRep} onChange={e => setMedRep(e.target.value)}>
-        {s.medReps.map(m => <option key={m} value={m}>{m}</option>)}
+        {config.medReps.map(m => <option key={m} value={m}>{m}</option>)}
       </select>
 
       <label>Product</label>
-      <div className="muted">{product.name}</div>
+      <select value={product.id} onChange={e => {
+        const p = config.products.find(x => x.id === e.target.value)
+        setProduct(p)
+      }}>
+        {config.products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+      </select>
 
       <label>Messages (tap to select)</label>
       <div className="messages">
         {messages.map((m, i) => (
-          <button key={i} className={selected.includes(m) ? 'chip selected' : 'chip'} onClick={() => toggleMessage(i)}>
-            <div>{m}</div>
-            <small className="badge">{usedBefore(m) ? 'Used' : 'New'}</small>
-          </button>
+          <MessageChip key={i} msg={m} isSelected={selected.includes(m)} onClick={() => toggleMessage(i)} />
         ))}
       </div>
 
@@ -55,7 +93,17 @@ export default function LogCall({ msl }) {
       <label>Note</label>
       <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Knowledge note..." />
 
-      <button className="primary" onClick={submit}>Save Call</button>
+      <button className="primary" onClick={submit} disabled={saving}>
+        {saving ? 'Saving...' : 'Save Call'}
+      </button>
     </div>
+  )
+}
+
+function MessageChip({ msg, isSelected, onClick }) {
+  return (
+    <button className={isSelected ? 'chip selected' : 'chip'} onClick={onClick}>
+      <div>{msg}</div>
+    </button>
   )
 }

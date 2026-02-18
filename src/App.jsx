@@ -1,17 +1,49 @@
-import React, { useState } from 'react'
-import Login from './components/Login'
+import React, { useState, useEffect } from 'react'
+import { onAuthStateChanged, signOut } from 'firebase/auth'
+import { auth } from './firebase'
+import { initializeSharedData, getSharedConfig } from './firestoreStorage'
+import FirebaseLogin from './components/FirebaseLogin'
 import LogCall from './components/LogCall'
 import MessagesEdit from './components/MessagesEdit'
 import Reports from './components/Reports'
-import { getState, resetDemo } from './storage'
 
 export default function App() {
-  const [msl, setMsl] = useState(null)
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('log')
   const [night, setNight] = useState(false)
-  const state = getState()
+  const [config, setConfig] = useState(null)
+  const [mslInfo, setMslInfo] = useState(null)
 
-  function logout() { setMsl(null); setTab('log') }
+  // Initialize Firebase and listen for auth changes
+  useEffect(() => {
+    initializeSharedData().catch(e => console.error('Init data failed:', e))
+    
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const cfg = await getSharedConfig()
+        setConfig(cfg)
+        
+        // Find MSL details by email
+        const msl = cfg.msls.find(m => m.email === firebaseUser.email)
+        if (msl) {
+          setMslInfo(msl)
+        }
+      }
+      setUser(firebaseUser)
+      setLoading(false)
+    })
+
+    return unsubscribe
+  }, [])
+
+  function handleLogout() {
+    signOut(auth).catch(e => console.error('Logout error:', e))
+    setMslInfo(null)
+    setTab('log')
+  }
+
+  if (loading) return <div style={{padding: '20px'}}>Loading...</div>
 
   return (
     <div className={night ? 'app night' : 'app'}>
@@ -24,41 +56,40 @@ export default function App() {
       </header>
 
       <main>
-        {!msl ? (
-          <Login onSelect={m => setMsl(m)} />
+        {!user ? (
+          <FirebaseLogin 
+            onSuccess={() => {}}
+            onLogout={() => setMslInfo(null)}
+          />
         ) : (
           <div>
             <div className="tabs">
               <button onClick={() => setTab('log')} className={tab==='log'? 'active':''}>Log Call</button>
-              <button onClick={() => setTab('edit')} className={tab==='edit'? 'active':''}>Edit Messages</button>
+              <button onClick={() => setTab('edit')} className={tab==='edit'? 'active':''}>Messages</button>
               <button onClick={() => setTab('report')} className={tab==='report'? 'active':''}>Report</button>
-              {msl.manager && <button onClick={() => setTab('team')} className={tab==='team'? 'active':''}>Team Reports</button>}
+              {mslInfo?.manager && <button onClick={() => setTab('team')} className={tab==='team'? 'active':''}>Team</button>}
             </div>
 
-            <div className="meta">Signed in as <strong>{msl.name}</strong> <button onClick={logout}>Switch</button></div>
-
-            {tab==='log' && <LogCall msl={msl} />}
-            {tab==='edit' && <MessagesEdit msl={msl} />}
-            {tab==='report' && <Reports msl={msl} />}
-            {tab==='team' && <div className="card">
-              <h2>Team Reports</h2>
-              {state.msls.filter(x=>!x.manager).map(mm => (
-                <div key={mm.id} className="team-item">
-                  <h4>{mm.name}</h4>
-                  <Reports msl={mm} />
-                </div>
-              ))}
-            </div>}
-
-            <div style={{marginTop:12}}>
-              <button onClick={() => { if(confirm('Reset demo data?')) resetDemo(); location.reload() }} className="muted">Reset Demo</button>
+            <div className="meta">
+              <strong>{mslInfo?.name || user.email}</strong> 
+              {mslInfo?.manager && ' (Manager)'}
+              <button onClick={handleLogout} style={{marginLeft: 8}}>Logout</button>
             </div>
+
+            {config && (
+              <>
+                {tab==='log' && <LogCall user={user} mslId={mslInfo.id} config={config} />}
+                {tab==='edit' && <MessagesEdit mslId={mslInfo.id} config={config} />}
+                {tab==='report' && <Reports mslId={mslInfo.id} mslName={mslInfo.name} isManager={false} config={config} />}
+                {tab==='team' && mslInfo?.manager && <Reports mslId={mslInfo.id} mslName={mslInfo.name} isManager={true} config={config} />}
+              </>
+            )}
           </div>
         )}
       </main>
 
       <footer>
-        <div>Theme colors: #FEED00 / #FFFFFF</div>
+        <div>Denk MSL • Powered by Firebase</div>
       </footer>
     </div>
   )
