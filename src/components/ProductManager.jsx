@@ -1,25 +1,16 @@
 import React, { useState } from 'react'
-import { createProduct, updateProduct, deleteProduct } from '../firestoreStorage'
+import { createProduct, deleteProduct } from '../firestoreStorage'
 
 export default function ProductManager({ config, onProductAdded }) {
   const [showForm, setShowForm] = useState(false)
   const [productName, setProductName] = useState('')
   const [messages, setMessages] = useState(['', '', '', '', '', ''])
   const [saving, setSaving] = useState(false)
-  const [editingId, setEditingId] = useState(null)
-  const [editName, setEditName] = useState('')
-  const [editMessages, setEditMessages] = useState([])
 
   function updateMessage(i, val) {
     const m = messages.slice()
     m[i] = val
     setMessages(m)
-  }
-
-  function updateEditMessage(i, val) {
-    const m = editMessages.slice()
-    m[i] = val
-    setEditMessages(m)
   }
 
   async function handleCreate() {
@@ -40,29 +31,6 @@ export default function ProductManager({ config, onProductAdded }) {
       setProductName('')
       setMessages(['', '', '', '', '', ''])
       setShowForm(false)
-      setTimeout(() => onProductAdded(), 100)
-    } catch (err) {
-      alert('Error: ' + err.message)
-      setSaving(false)
-    }
-  }
-
-  async function handleSaveEdit() {
-    if (!editName.trim()) {
-      alert('Please enter a product name')
-      return
-    }
-    if (!editMessages.some(m => m.trim())) {
-      alert('Please enter at least one message')
-      return
-    }
-
-    setSaving(true)
-    try {
-      const messagesList = editMessages.filter(m => m.trim())
-      await updateProduct(editingId, editName, messagesList)
-      alert('Product updated!')
-      setEditingId(null)
       setTimeout(() => onProductAdded(), 100)
     } catch (err) {
       alert('Error: ' + err.message)
@@ -121,37 +89,7 @@ export default function ProductManager({ config, onProductAdded }) {
         </div>
       ) : null}
 
-      {editingId ? (
-        <div style={{marginTop: 16, paddingBottom: 16, borderBottom: '1px solid #eee'}}>
-          <h3>Edit Product</h3>
-          <label>Product Name</label>
-          <input 
-            type="text" 
-            value={editName}
-            onChange={e => setEditName(e.target.value)}
-          />
-
-          <label>Messages</label>
-          {editMessages.map((m, i) => (
-            <div key={i} className="msg-edit">
-              <small>{String.fromCharCode(65 + i)}.</small>
-              <textarea 
-                value={m}
-                onChange={e => updateEditMessage(i, e.target.value)}
-              />
-            </div>
-          ))}
-
-          <div style={{display: 'flex', gap: 8}}>
-            <button className="primary" onClick={handleSaveEdit} disabled={saving}>
-              {saving ? 'Saving...' : 'Save Changes'}
-            </button>
-            <button className="secondary" onClick={() => setEditingId(null)}>Cancel</button>
-          </div>
-        </div>
-      ) : null}
-
-      {!showForm && !editingId ? (
+      {!showForm ? (
         <button className="primary" onClick={() => setShowForm(true)} style={{marginTop: 12}}>
           + Add New Product
         </button>
@@ -167,18 +105,7 @@ export default function ProductManager({ config, onProductAdded }) {
                 <span className="muted" style={{marginLeft: 8}}>({p.messages.length} messages)</span>
               </div>
               <div style={{display: 'flex', gap: 8}}>
-                <button 
-                  className="secondary" 
-                  style={{padding: '4px 8px', fontSize: '0.9em'}}
-                  onClick={() => {
-                    setEditingId(p.id)
-                    setEditName(p.name)
-                    setEditMessages(p.messages.slice())
-                  }}
-                >
-                  Edit
-                </button>
-                <button 
+              <button 
                   className="secondary" 
                   style={{padding: '4px 8px', fontSize: '0.9em', color: '#d32f2f'}}
                   onClick={() => handleDelete(p.id)}
