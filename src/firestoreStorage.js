@@ -234,7 +234,77 @@ export async function createProduct(productName, initialMessages) {
     console.error('Error creating product:', err)
     throw err
   }
+}
 
+// Update a product
+export async function updateProduct(productId, newName, newMessages) {
+  try {
+    const ref = doc(db, 'config', 'app')
+    const snap = await getDoc(ref)
+    
+    if (!snap.exists()) {
+      throw new Error('Config document missing.')
+    }
+    
+    let data = snap.data()
+    if (!data || !Array.isArray(data.products)) {
+      throw new Error('Invalid config data.')
+    }
+    
+    let products = data.products.slice()
+    const idx = products.findIndex(p => p && p.id === productId)
+    
+    if (idx >= 0) {
+      products[idx] = {
+        id: productId,
+        name: newName,
+        messages: newMessages
+      }
+    }
+    
+    await setDoc(ref, {
+      ...data,
+      products,
+      updatedAt: serverTimestamp()
+    })
+    
+    configCache = null // Clear cache
+    return products[idx]
+  } catch (err) {
+    console.error('Error updating product:', err)
+    throw err
+  }
+}
+
+// Delete a product
+export async function deleteProduct(productId) {
+  try {
+    const ref = doc(db, 'config', 'app')
+    const snap = await getDoc(ref)
+    
+    if (!snap.exists()) {
+      throw new Error('Config document missing.')
+    }
+    
+    let data = snap.data()
+    if (!data || !Array.isArray(data.products)) {
+      throw new Error('Invalid config data.')
+    }
+    
+    const products = data.products.filter(p => p && p.id !== productId)
+    
+    await setDoc(ref, {
+      ...data,
+      products,
+      updatedAt: serverTimestamp()
+    })
+    
+    configCache = null // Clear cache
+  } catch (err) {
+    console.error('Error deleting product:', err)
+    throw err
+  }
+}
 
 // Add or update a med rep
 export async function addOrUpdateMedRep(medRepName, zone = '', line = '') {

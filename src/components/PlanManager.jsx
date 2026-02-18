@@ -3,7 +3,8 @@ import { savePlan, getAllPlans } from '../firestoreStorage'
 
 export default function PlanManager({ mslId, mslName, config }) {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
-  const [medRep, setMedRep] = useState('')
+  const [medRep1, setMedRep1] = useState('')
+  const [medRep2, setMedRep2] = useState('')
   const [product, setProduct] = useState(null)
   const [saving, setSaving] = useState(false)
   const [plans, setPlans] = useState([])
@@ -12,9 +13,9 @@ export default function PlanManager({ mslId, mslName, config }) {
   useEffect(() => {
     if (config && config.products.length > 0 && config.medReps.length > 0) {
       setProduct(config.products[0])
-      const firstMedRep = config.medReps[0]
-      const medRepName = typeof firstMedRep === 'string' ? firstMedRep : firstMedRep.name
-      setMedRep(medRepName)
+      const medRepNames = (config.medReps || []).map(m => typeof m === 'string' ? m : m.name)
+      setMedRep1(medRepNames[0])
+      setMedRep2(medRepNames[1] || medRepNames[0])
       loadPlans()
     }
   }, [config])
@@ -33,15 +34,27 @@ export default function PlanManager({ mslId, mslName, config }) {
   async function handleSavePlan() {
     setSaving(true)
     try {
+      // Save first med rep call
       await savePlan({
         date,
-        medRep,
+        medRep: medRep1,
         productId: product.id,
         mslId,
         mslName,
         createdOn: new Date().toLocaleString()
       })
-      alert('Plan saved!')
+      
+      // Save second med rep call
+      await savePlan({
+        date,
+        medRep: medRep2,
+        productId: product.id,
+        mslId,
+        mslName,
+        createdOn: new Date().toLocaleString()
+      })
+      
+      alert('2 plans saved!')
       await loadPlans()
     } catch (err) {
       alert('Error: ' + err.message)
@@ -71,8 +84,13 @@ export default function PlanManager({ mslId, mslName, config }) {
         <label>Date</label>
         <input type="date" value={date} onChange={e => setDate(e.target.value)} />
 
-        <label>Med Rep</label>
-        <select value={medRep} onChange={e => setMedRep(e.target.value)}>
+        <label>Med Rep #1</label>
+        <select value={medRep1} onChange={e => setMedRep1(e.target.value)}>
+          {medRepNames.map(m => <option key={m} value={m}>{m}</option>)}
+        </select>
+
+        <label>Med Rep #2</label>
+        <select value={medRep2} onChange={e => setMedRep2(e.target.value)}>
           {medRepNames.map(m => <option key={m} value={m}>{m}</option>)}
         </select>
 
@@ -85,7 +103,7 @@ export default function PlanManager({ mslId, mslName, config }) {
         </select>
 
         <button className="primary" onClick={handleSavePlan} disabled={saving}>
-          {saving ? 'Saving Plan...' : 'Save Plan'}
+          {saving ? 'Saving Plans...' : 'Save 2 Calls'}
         </button>
       </div>
 
