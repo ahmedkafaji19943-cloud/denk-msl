@@ -49,11 +49,6 @@ export default function FirebaseLogin({ onSuccess, onLogout }) {
           <button className="primary" onClick={handleLogin} disabled={loading}>
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
-          <div className="muted" style={{marginTop: 16, fontSize: '0.85em'}}>
-            <strong>Demo Accounts:</strong><br/>
-            khaldoon@denk.local | ahmed@denk.local | rabah@denk.local | ali@denk.local<br/>
-            Password: Denk2024!
-          </div>
         </div>
       ) : (
         <div>
