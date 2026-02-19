@@ -92,17 +92,26 @@ function ReportContent({ calls, config, onToggleMedRep, expandedMedReps }) {
     
     // Group by med rep and product
     const key = `${c.medRep}_${c.productId}`
-    byMedRepProduct[key] = byMedRepProduct[key] || { medRep: c.medRep, productId: c.productId, messages: [] }
+    byMedRepProduct[key] = byMedRepProduct[key] || { medRep: c.medRep, productId: c.productId, messageNotes: [] }
     
-    // Collect all messages
+    // Collect all messages with their notes
     if (c.messages && Array.isArray(c.messages)) {
-      byMedRepProduct[key].messages.push(...c.messages)
+      c.messages.forEach(msg => {
+        byMedRepProduct[key].messageNotes.push({
+          message: msg,
+          note: c.note || ''
+        })
+      })
     }
   })
   
-  // Remove duplicates
+  // Remove duplicate message-note pairs
   Object.keys(byMedRepProduct).forEach(key => {
-    byMedRepProduct[key].messages = [...new Set(byMedRepProduct[key].messages)]
+    const uniqueMap = {}
+    byMedRepProduct[key].messageNotes.forEach(item => {
+      uniqueMap[item.message] = item // Keep last note for each message
+    })
+    byMedRepProduct[key].messageNotes = Object.values(uniqueMap)
   })
 
   return (
@@ -150,16 +159,23 @@ function ReportContent({ calls, config, onToggleMedRep, expandedMedReps }) {
                             📦 {product?.name || productData.productId}
                           </div>
                           
-                          {productData.messages.length > 0 ? (
+                          {productData.messageNotes.length > 0 ? (
                             <div>
                               <div style={{fontSize: '0.9em', color: '#666', marginBottom: 8}}>Messages used:</div>
-                              <ul style={{margin: 0, paddingLeft: 20}}>
-                                {productData.messages.map((msg, i) => (
-                                  <li key={i} style={{fontSize: '0.9em', lineHeight: 1.6, color: '#333'}}>
-                                    {msg}
-                                  </li>
+                              <div style={{display: 'flex', flexDirection: 'column', gap: 12}}>
+                                {productData.messageNotes.map((item, i) => (
+                                  <div key={i} style={{padding: 10, background: '#f5f5f5', borderRadius: 4, borderLeft: '3px solid #FEED00'}}>
+                                    <div style={{fontSize: '0.9em', color: '#333', marginBottom: item.note ? 6 : 0, fontWeight: 500}}>
+                                      • {item.message}
+                                    </div>
+                                    {item.note && (
+                                      <div style={{fontSize: '0.85em', color: '#666', fontStyle: 'italic', paddingLeft: 12}}>
+                                        📝 Note: {item.note}
+                                      </div>
+                                    )}
+                                  </div>
                                 ))}
-                              </ul>
+                              </div>
                             </div>
                           ) : (
                             <div className="muted" style={{fontSize: '0.9em'}}>No messages recorded</div>

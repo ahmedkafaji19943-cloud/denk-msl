@@ -94,7 +94,7 @@ export default function App() {
               <button onClick={() => setTab('edit')} className={tab==='edit'? 'active':''}>Messages</button>
               <button onClick={() => setTab('products')} className={tab==='products'? 'active':''}>Products</button>
               <button onClick={() => setTab('medreps')} className={tab==='medreps'? 'active':''}>Med Reps</button>
-              {mslInfo?.manager && <button onClick={() => setTab('mslreport')} className={tab==='mslreport'? 'active':''}>MSL Report</button>}
+              <button onClick={() => setTab('mslreport')} className={tab==='mslreport'? 'active':''}>MSL Report</button>
             </div>
 
             <div className="meta">
@@ -110,7 +110,7 @@ export default function App() {
                 {tab==='edit' && <MessagesEdit mslId={mslInfo.id} config={config} />}
                 {tab==='products' && <ProductManager config={config} onProductAdded={reloadConfig} />}
                 {tab==='medreps' && <MedRepManager config={config} onMedRepsUpdated={reloadConfig} />}
-                {tab==='mslreport' && mslInfo?.manager && <Reports mslId={mslInfo.id} mslName={mslInfo.name} isManager={true} config={config} />}
+                {tab==='mslreport' && <Reports mslId={mslInfo.id} mslName={mslInfo.name} isManager={mslInfo?.manager || false} config={config} />}
               </>
             )}
           </div>
