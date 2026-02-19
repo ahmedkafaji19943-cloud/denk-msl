@@ -15,13 +15,8 @@ export default function Reports({ mslId, mslName, isManager, config }) {
   }, [])
 
   async function loadReports() {
-    if (isManager) {
-      const allCalls = await getAllCalls()
-      setTeamReports(groupCallsByMSL(allCalls, config))
-    } else {
-      const mslCalls = await getCallsForMSL(mslId)
-      setCalls(mslCalls)
-    }
+    const allCalls = await getAllCalls()
+    setTeamReports(groupCallsByMSL(allCalls, config))
     setLoading(false)
   }
 
@@ -43,41 +38,32 @@ export default function Reports({ mslId, mslName, isManager, config }) {
 
   if (loading) return <div className="card">Loading reports...</div>
 
-  if (isManager) {
-    return (
-      <div className="card">
-        <h2>Team Reports</h2>
-        {Object.entries(teamReports).map(([mslId, team]) => (
-          <div key={mslId} style={{marginBottom: 20, borderBottom: '1px solid #eee', paddingBottom: 20}}>
-            <div
-              onClick={() => toggleMSL(mslId)}
-              style={{
-                cursor: 'pointer',
-                padding: 12,
-                background: expandedMSLs[mslId] ? '#FEED00' : '#f5f5f5',
-                borderRadius: 6,
-                fontWeight: 'bold',
-                fontSize: '1.1em',
-                userSelect: 'none'
-              }}
-            >
-              {expandedMSLs[mslId] ? '▼' : '▶'} {team.name}
-            </div>
-            {expandedMSLs[mslId] && (
-              <div style={{marginTop: 12, paddingLeft: 12}}>
-                <ReportContent calls={team.calls} config={config} onToggleMedRep={toggleMedRep} expandedMedReps={expandedMedReps} />
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    )
-  }
-
   return (
     <div className="card">
-      <h2>My Report</h2>
-      <ReportContent calls={calls} config={config} onToggleMedRep={toggleMedRep} expandedMedReps={expandedMedReps} />
+      <h2>{isManager ? 'Team Reports' : 'All MSL Reports'}</h2>
+      {Object.entries(teamReports).map(([mslId, team]) => (
+        <div key={mslId} style={{marginBottom: 20, borderBottom: '1px solid #eee', paddingBottom: 20}}>
+          <div
+            onClick={() => toggleMSL(mslId)}
+            style={{
+              cursor: 'pointer',
+              padding: 12,
+              background: expandedMSLs[mslId] ? '#FEED00' : '#f5f5f5',
+              borderRadius: 6,
+              fontWeight: 'bold',
+              fontSize: '1.1em',
+              userSelect: 'none'
+            }}
+          >
+            {expandedMSLs[mslId] ? '▼' : '▶'} {team.name}
+          </div>
+          {expandedMSLs[mslId] && (
+            <div style={{marginTop: 12, paddingLeft: 12}}>
+              <ReportContent calls={team.calls} config={config} onToggleMedRep={toggleMedRep} expandedMedReps={expandedMedReps} />
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   )
 }
