@@ -76,28 +76,19 @@ function ReportContent({ calls, config, onToggleMedRep, expandedMedReps }) {
     byMedRep[c.medRep] = byMedRep[c.medRep] || []
     byMedRep[c.medRep].push(c.score)
     
-    // Group by med rep and product
+    // Group by med rep and product, keeping individual calls with dates
     const key = `${c.medRep}_${c.productId}`
-    byMedRepProduct[key] = byMedRepProduct[key] || { medRep: c.medRep, productId: c.productId, messageNotes: [] }
+    byMedRepProduct[key] = byMedRepProduct[key] || { medRep: c.medRep, productId: c.productId, calls: [] }
     
-    // Collect all messages with their notes
+    // Preserve individual calls with all their details including dates
     if (c.messages && Array.isArray(c.messages)) {
-      c.messages.forEach(msg => {
-        byMedRepProduct[key].messageNotes.push({
-          message: msg,
-          note: c.note || ''
-        })
+      byMedRepProduct[key].calls.push({
+        date: c.date || 'No date',
+        messages: c.messages,
+        note: c.note || '',
+        score: c.score
       })
     }
-  })
-  
-  // Remove duplicate message-note pairs
-  Object.keys(byMedRepProduct).forEach(key => {
-    const uniqueMap = {}
-    byMedRepProduct[key].messageNotes.forEach(item => {
-      uniqueMap[item.message] = item // Keep last note for each message
-    })
-    byMedRepProduct[key].messageNotes = Object.values(uniqueMap)
   })
 
   return (
@@ -145,26 +136,33 @@ function ReportContent({ calls, config, onToggleMedRep, expandedMedReps }) {
                             📦 {product?.name || productData.productId}
                           </div>
                           
-                          {productData.messageNotes.length > 0 ? (
-                            <div>
-                              <div style={{fontSize: '0.9em', color: '#666', marginBottom: 8}}>Messages used:</div>
-                              <div style={{display: 'flex', flexDirection: 'column', gap: 12}}>
-                                {productData.messageNotes.map((item, i) => (
-                                  <div key={i} style={{padding: 10, background: '#f5f5f5', borderRadius: 4, borderLeft: '3px solid #FEED00'}}>
-                                    <div style={{fontSize: '0.9em', color: '#333', marginBottom: item.note ? 6 : 0, fontWeight: 500}}>
-                                      • {item.message}
-                                    </div>
-                                    {item.note && (
-                                      <div style={{fontSize: '0.85em', color: '#666', fontStyle: 'italic', paddingLeft: 12}}>
-                                        📝 Note: {item.note}
-                                      </div>
-                                    )}
+                          {productData.calls && productData.calls.length > 0 ? (
+                            <div style={{display: 'flex', flexDirection: 'column', gap: 12}}>
+                              {productData.calls.map((callData, callIdx) => (
+                                <div key={callIdx} style={{padding: 10, background: '#f5f5f5', borderRadius: 4, borderLeft: '3px solid #FEED00'}}>
+                                  <div style={{fontSize: '0.85em', color: '#666', marginBottom: 8, fontWeight: 500}}>
+                                    📅 {callData.date}
                                   </div>
-                                ))}
-                              </div>
+                                  <div style={{fontSize: '0.9em', color: '#333', marginBottom: callData.note ? 6 : 0, fontWeight: 500}}>
+                                    {callData.messages.map((msg, msgIdx) => (
+                                      <div key={msgIdx} style={{marginBottom: 4}}>
+                                        • {msg}
+                                      </div>
+                                    ))}
+                                  </div>
+                                  {callData.note && (
+                                    <div style={{fontSize: '0.85em', color: '#666', fontStyle: 'italic', paddingLeft: 12, marginBottom: 4}}>
+                                      📝 Note: {callData.note}
+                                    </div>
+                                  )}
+                                  <div style={{fontSize: '0.8em', color: '#999', paddingLeft: 12, marginTop: 4}}>
+                                    ⭐ Score: {callData.score || '-'}
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           ) : (
-                            <div className="muted" style={{fontSize: '0.9em'}}>No messages recorded</div>
+                            <div className="muted" style={{fontSize: '0.9em'}}>No calls recorded</div>
                           )}
                         </div>
                       )
