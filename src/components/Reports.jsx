@@ -115,7 +115,13 @@ export default function Reports({ mslId, mslName, isManager, config }) {
           gap: 20,
           marginTop: 24
         }}>
-          {Object.entries(teamReports).map(([mslId, team]) => {
+          {Object.entries(teamReports)
+            .filter(([mslId]) => {
+              // Hide reports-only users like Obaidi
+              const msl = config?.msls?.find(m => m.id === mslId)
+              return !msl?.reportsOnly
+            })
+            .map(([mslId, team]) => {
           const medRepCount = countUniqueMedReps(team.calls)
           
           return (
