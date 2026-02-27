@@ -482,6 +482,74 @@ footer{
   accent-color: var(--brand);
 }
 
+/* Night Mode - Enhanced text visibility */
+
+/* Ensure all text in night mode is properly colored */
+.night,
+.night * {
+  color: #e5e7eb;
+}
+
+/* Override heading colors */
+.night h1, .night h2, .night h3, .night h4, .night h5, .night h6,
+.night strong, .night b {
+  color: #f3f4f6;
+}
+
+/* Plan Manager - fix for plan display sections */
+.night .card > div > div {
+  background-color: inherit;
+  color: #e5e7eb;
+}
+
+/* Sections with light backgrounds in inline styles */
+.night div[style*="background"] {
+  background-color: #1f2937 !important;
+}
+
+/* Keep brand colors visible */
+.night [style*="FEED00"],
+.night [style*="FFC800"],
+.night [style*="6366f1"],
+.night [style*="ec4899"] {
+  filter: brightness(1);
+}
+
+/* Dropdown overlays */
+.night div[style*="position: absolute"],
+.night div[style*="position:absolute"],
+.night div[style*="zIndex"],
+.night div[style*="z-index"] {
+  background-color: #1f2937 !important;
+  color: #e5e7eb !important;
+  border-color: #4b5563 !important;
+}
+
+/* Report display - ensure text is readable */
+.night .card div {
+  color: #e5e7eb;
+}
+
+.night button[style],
+.night button {
+  color: #e5e7eb;
+}
+
+/* Preserve text that should stay dark (like inside brand buttons) */
+.night *[style*="color: '#000'"],
+.night *[style*='color: "#000"'] {
+  color: #000 !important;
+}
+
+.night *[style*="color: #000"] {
+  color: #000 !important;
+}
+
+/* Plan sections text */
+.night .card div div {
+  color: #e5e7eb;
+}
+
 @media (min-width: 700px){
   .messages{flex-direction: row; flex-wrap: wrap}
   .chip{width: 48%}
