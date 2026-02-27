@@ -490,6 +490,72 @@ footer{
   color: #e5e7eb;
 }
 
+/* Night Mode - Reports Detailed Call History */
+.night div[style*="color: #666"] {
+  color: #d1d5db !important;
+}
+
+.night div[style*="color: #333"] {
+  color: #f3f4f6 !important;
+}
+
+.night div[style*="color: #555"] {
+  color: #e5e7eb !important;
+}
+
+.night div[style*="color: #999"] {
+  color: #9ca3af !important;
+}
+
+.night div[style*="background: #fafafa"] {
+  background: #1f2937 !important;
+}
+
+.night div[style*="background: #fff"] {
+  background: #111827 !important;
+}
+
+.night div[style*="background: #f9f9f9"] {
+  background: #181f2e !important;
+}
+
+.night div[style*="background: #f5f5f5"] {
+  background: #1a202c !important;
+}
+
+.night div[style*="background: #f0f0f0"] {
+  background: #1f2937 !important;
+}
+
+.night div[style*="background: linear-gradient(135deg, #fff 0%, #f9f9f9 100%)"] {
+  background: linear-gradient(135deg, #1f2937 0%, #111827 100%) !important;
+}
+
+.night div[style*="borderLeft: '4px solid #FEED00'"] {
+  border-left-color: #FFC800 !important;
+}
+
+/* Night Mode - Report Cards and StatCards in detailed view */
+.night div[style*="border: '1px solid #ddd'"] {
+  border-color: #374151 !important;
+}
+
+.night div[style*="border: '1px solid #eee'"] {
+  border-color: #374151 !important;
+}
+
+.night div[style*="border: '1px solid #e0e0e0'"] {
+  border-color: #374151 !important;
+}
+
+.night div[style*="border: '2px solid #e0e0e0'"] {
+  border-color: #374151 !important;
+}
+
+.night div[style*="borderTop: '1px solid #eee'"] {
+  border-top-color: #374151 !important;
+}
+
 /* Override heading colors */
 .night h1, .night h2, .night h3, .night h4, .night h5, .night h6,
 .night strong, .night b {
