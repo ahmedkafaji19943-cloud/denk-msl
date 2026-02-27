@@ -94,6 +94,21 @@ export default function App() {
             onSuccess={() => {}}
             onLogout={() => setMslInfo(null)}
           />
+        ) : !mslInfo ? (
+          <div className="card" style={{margin: '20px', padding: '20px', background: '#fee2e2', border: '2px solid #ec4899', borderRadius: '8px'}}>
+            <h2 style={{color: '#ec4899', marginBottom: '12px'}}>⚠️ Account Not Configured</h2>
+            <p>Your Firebase user email ({user.email}) or UID ({user.uid}) is not configured in the system.</p>
+            <p>Please contact an administrator to add your account.</p>
+            <details style={{marginTop: '12px', padding: '12px', background: '#fff', borderRadius: '4px', cursor: 'pointer'}}>
+              <summary>Debug Info</summary>
+              <pre style={{marginTop: '8px', fontSize: '0.85em', overflow: 'auto', maxHeight: '200px'}}>
+{`Email: ${user.email}
+UID: ${user.uid}
+Config MSLs: ${config?.msls?.map(m => `${m.name} (${m.email})`).join(', ') || 'Loading...'}`}
+              </pre>
+            </details>
+            <button onClick={handleLogout} style={{marginTop: '16px', padding: '8px 16px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9em'}}>Logout</button>
+          </div>
         ) : (
           <div>
             <div className="tabs">
