@@ -5,18 +5,31 @@ function avg(arr) { return arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length).to
 
 export default function Reports({ mslId, mslName, isManager, config }) {
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [teamReports, setTeamReports] = useState({})
   const [selectedMSLId, setSelectedMSLId] = useState(null)
   const [expandedMedReps, setExpandedMedReps] = useState({})
 
   useEffect(() => {
     loadReports()
-  }, [])
+  }, [config])
 
   async function loadReports() {
-    const allCalls = await getAllCalls()
-    setTeamReports(groupCallsByMSL(allCalls, config))
-    setLoading(false)
+    try {
+      setLoading(true)
+      setError(null)
+      if (!config) {
+        setError('Configuration not loaded')
+        return
+      }
+      const allCalls = await getAllCalls()
+      setTeamReports(groupCallsByMSL(allCalls, config))
+    } catch (err) {
+      console.error('Error loading reports:', err)
+      setError('Failed to load reports: ' + err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   function groupCallsByMSL(allCalls, cfg) {
@@ -32,6 +45,8 @@ export default function Reports({ mslId, mslName, isManager, config }) {
   }
 
   if (loading) return <div className="card">Loading reports...</div>
+  
+  if (error) return <div className="card" style={{color: '#ec4899', fontWeight: 'bold'}}>⚠️ {error}</div>
 
   // If an MSL is selected, show detailed isolated view
   if (selectedMSLId) {
@@ -93,13 +108,14 @@ export default function Reports({ mslId, mslName, isManager, config }) {
   return (
     <div className="card">
       <h2>{isManager ? 'Team Reports' : 'All MSL Reports'}</h2>
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-        gap: 20,
-        marginTop: 24
-      }}>
-        {Object.entries(teamReports).map(([mslId, team]) => {
+      {Object.entries(teamReports).length > 0 ? (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+          gap: 20,
+          marginTop: 24
+        }}>
+          {Object.entries(teamReports).map(([mslId, team]) => {
           const medRepCount = countUniqueMedReps(team.calls)
           
           return (
@@ -161,7 +177,13 @@ export default function Reports({ mslId, mslName, isManager, config }) {
             </div>
           )
         })}
-      </div>
+        </div>
+      ) : (
+        <div style={{padding: 24, background: '#f5f5f5', borderRadius: 8, textAlign: 'center', color: '#999', marginTop: 24}}>
+          <p style={{fontSize: '1.1em'}}>No MSL data available</p>
+          <p style={{fontSize: '0.9em'}}>Reports will appear here once calls are logged</p>
+        </div>
+      )}
     </div>
   )
 }
