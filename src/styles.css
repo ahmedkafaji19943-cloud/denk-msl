@@ -347,24 +347,34 @@ footer{
 
 .night{
   background: linear-gradient(135deg, #111827 0%, #0f172a 100%);
-  color: #f3f4f6;
+  color: #e5e7eb;
 }
 
 .night .card{
   background: rgba(31, 41, 55, 0.8);
   backdrop-filter: blur(10px);
   border-color: #374151;
+  color: #e5e7eb;
+}
+
+.night .card h2{
+  color: #f3f4f6;
+}
+
+.night .card h3{
+  color: #f3f4f6;
 }
 
 .night header{
   background: rgba(31, 41, 55, 0.7);
   border-color: #374151;
+  color: #e5e7eb;
 }
 
 .night .list-item{
   background: #1f2937;
   border-color: #374151;
-  color: #f3f4f6;
+  color: #e5e7eb;
 }
 
 .night .list-item:hover{
@@ -375,16 +385,18 @@ footer{
 .night .chip{
   background: #1f2937;
   border-color: #374151;
-  color: #f3f4f6;
+  color: #e5e7eb;
 }
 
 .night .chip:hover{
   border-color: var(--primary-light);
+  color: #f3f4f6;
 }
 
 .night .chip.selected{
   background: rgba(254, 237, 0, 0.1);
   border-color: var(--brand);
+  color: #f3f4f6;
 }
 
 .night .tabs{
@@ -401,28 +413,73 @@ footer{
 .night .tabs button:hover{
   background: #374151;
   border-color: var(--primary-light);
+  color: #e5e7eb;
+}
+
+.night .tabs button.active{
+  color: #000;
+  background: var(--brand);
 }
 
 .night .meta{
   background: linear-gradient(135deg, #1a1f2e 0%, #111827 100%);
   border-color: #374151;
+  color: #e5e7eb;
+}
+
+.night .meta strong{
   color: #f3f4f6;
+}
+
+.night .meta button{
+  background: #4f46e5;
+  color: #fff;
+  border: none;
 }
 
 .night input, .night select, .night textarea{
   background: #1f2937;
-  color: #f3f4f6;
+  color: #e5e7eb;
   border-color: #374151;
+}
+
+.night input::placeholder, .night select::placeholder, .night textarea::placeholder{
+  color: #9ca3af;
 }
 
 .night input:focus, .night select:focus, .night textarea:focus{
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2), var(--shadow-md);
+  color: #f3f4f6;
+}
+
+.night label{
+  color: #d1d5db;
+}
+
+.night .muted{
+  color: #9ca3af;
+}
+
+.night .error{
+  color: #fca5a5;
 }
 
 .night footer{
   border-color: #374151;
   color: #9ca3af;
+}
+
+.night button{
+  color: #e5e7eb;
+}
+
+.night button:hover{
+  color: #f3f4f6;
+}
+
+.night .toggle input{
+  accent-color: var(--brand);
 }
 
 @media (min-width: 700px){
