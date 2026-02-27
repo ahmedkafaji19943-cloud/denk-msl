@@ -29,8 +29,12 @@ export default function App() {
         const cfg = await getSharedConfig()
         setConfig(cfg)
         
-        // Find MSL details by email
-        const msl = cfg.msls.find(m => m.email === firebaseUser.email)
+        // Find MSL details by email or UID
+        let msl = cfg.msls.find(m => m.email === firebaseUser.email)
+        // If not found by email, try by UID
+        if (!msl) {
+          msl = cfg.msls.find(m => m.uid === firebaseUser.uid)
+        }
         if (msl) {
           setMslInfo(msl)
           // If this is a reports-only user, set tab to mslreport
