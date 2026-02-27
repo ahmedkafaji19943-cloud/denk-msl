@@ -78,24 +78,22 @@ export async function getSharedConfig(bypassCache = false) {
     }
 
     const snap = await getDoc(doc(db, 'config', 'app'))
-    if (!snap.exists()) {
-      console.warn('Config not found, initializing...')
-      await initializeSharedData()
-      // Retry once after initialization
-      const retrySnap = await getDoc(doc(db, 'config', 'app'))
-      if (retrySnap.exists()) {
-        configCache = retrySnap.data()
-        cacheTime = Date.now()
-        return configCache
-      }
-      return MSL_DATA
+    let config = snap.exists() ? snap.data() : MSL_DATA
+    
+    // Always use MSL_DATA's msls as source of truth (ensures new MSLs are available)
+    config = {
+      ...config,
+      msls: MSL_DATA.msls,
+      medReps: MSL_DATA.medReps,
+      products: MSL_DATA.products
     }
     
-    configCache = snap.data() || MSL_DATA
+    configCache = config
     cacheTime = Date.now()
     return configCache
   } catch (err) {
     console.error('Error fetching config:', err)
+    // If error, return MSL_DATA as fallback
     return configCache || MSL_DATA
   }
 }
