@@ -33,6 +33,10 @@ export default function App() {
         const msl = cfg.msls.find(m => m.email === firebaseUser.email)
         if (msl) {
           setMslInfo(msl)
+          // If this is a reports-only user, set tab to mslreport
+          if (msl.reportsOnly) {
+            setTab('mslreport')
+          }
         }
       }
       setUser(firebaseUser)
@@ -89,11 +93,15 @@ export default function App() {
         ) : (
           <div>
             <div className="tabs">
-              <button onClick={() => setTab('log')} className={tab==='log'? 'active':''}>Log Call</button>
-              <button onClick={() => setTab('plan')} className={tab==='plan'? 'active':''}>Plan</button>
-              <button onClick={() => setTab('edit')} className={tab==='edit'? 'active':''}>Messages</button>
-              <button onClick={() => setTab('products')} className={tab==='products'? 'active':''}>Products</button>
-              <button onClick={() => setTab('medreps')} className={tab==='medreps'? 'active':''}>Med Reps</button>
+              {!mslInfo?.reportsOnly && (
+                <>
+                  <button onClick={() => setTab('log')} className={tab==='log'? 'active':''}>Log Call</button>
+                  <button onClick={() => setTab('plan')} className={tab==='plan'? 'active':''}>Plan</button>
+                  <button onClick={() => setTab('edit')} className={tab==='edit'? 'active':''}>Messages</button>
+                  <button onClick={() => setTab('products')} className={tab==='products'? 'active':''}>Products</button>
+                  <button onClick={() => setTab('medreps')} className={tab==='medreps'? 'active':''}>Med Reps</button>
+                </>
+              )}
               <button onClick={() => setTab('mslreport')} className={tab==='mslreport'? 'active':''}>MSL Report</button>
             </div>
 

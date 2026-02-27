@@ -8,7 +8,8 @@ import {
   where,
   addDoc,
   updateDoc,
-  serverTimestamp
+  serverTimestamp,
+  deleteDoc
 } from 'firebase/firestore'
 import { db } from './firebase'
 
@@ -17,7 +18,8 @@ const MSL_DATA = {
     { id: 'msl1', name: 'Khaldoon Sattar', email: 'khaldoon@denk.local', manager: true },
     { id: 'msl2', name: 'Ahmed AbdulKareem', email: 'ahmed@denk.local' },
     { id: 'msl3', name: 'Ahmed Rabah', email: 'rabah@denk.local' },
-    { id: 'msl4', name: 'Ali Kamil', email: 'ali@denk.local' }
+    { id: 'msl4', name: 'Ali Kamil', email: 'ali@denk.local' },
+    { id: 'msl5', name: 'Obaidi', email: 'obaidi@denk.local', reportsOnly: true }
   ],
   medReps: [
     { name: 'Yaman Ali', zone: 'North', line: '' },
@@ -121,6 +123,16 @@ export async function saveCall(call) {
     })
   } catch (err) {
     console.error('Error saving call:', err)
+    throw err
+  }
+}
+
+// Delete a call
+export async function deleteCall(callId) {
+  try {
+    await deleteDoc(doc(db, 'calls', callId))
+  } catch (err) {
+    console.error('Error deleting call:', err)
     throw err
   }
 }

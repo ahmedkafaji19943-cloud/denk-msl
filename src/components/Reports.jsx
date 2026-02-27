@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { getCallsForMSL, getAllCalls } from '../firestoreStorage'
+import { getCallsForMSL, getAllCalls, deleteCall } from '../firestoreStorage'
 
 function avg(arr) { return arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(1) : '-' }
 
@@ -74,7 +74,6 @@ export default function Reports({ mslId, mslName, isManager, config }) {
             borderRadius: 8
           }}>
             <StatCard label="Total Calls" value={mslData.calls.length} />
-            <StatCard label="Avg Score" value={calculateAvgScore(mslData.calls)} />
             <StatCard label="Med Reps Covered" value={countUniqueMedReps(mslData.calls)} />
           </div>
           
@@ -82,7 +81,8 @@ export default function Reports({ mslId, mslName, isManager, config }) {
             calls={mslData.calls} 
             config={config} 
             onToggleMedRep={toggleMedRep} 
-            expandedMedReps={expandedMedReps} 
+            expandedMedReps={expandedMedReps}
+            onReportDeleted={() => loadReports()}
           />
         </div>
       </div>
@@ -100,7 +100,6 @@ export default function Reports({ mslId, mslName, isManager, config }) {
         marginTop: 24
       }}>
         {Object.entries(teamReports).map(([mslId, team]) => {
-          const avgScore = calculateAvgScore(team.calls)
           const medRepCount = countUniqueMedReps(team.calls)
           
           return (
@@ -136,13 +135,6 @@ export default function Reports({ mslId, mslName, isManager, config }) {
                   <div style={{fontSize: '0.85em', color: '#666', marginBottom: 4}}>Calls Logged</div>
                   <div style={{fontSize: '1.5em', fontWeight: 'bold', color: '#6366f1'}}>
                     {team.calls.length}
-                  </div>
-                </div>
-                
-                <div style={{padding: 12, background: '#fff', borderRadius: 6, border: '1px solid #eee'}}>
-                  <div style={{fontSize: '0.85em', color: '#666', marginBottom: 4}}>Avg Score</div>
-                  <div style={{fontSize: '1.5em', fontWeight: 'bold', color: '#FEED00'}}>
-                    {avgScore}
                   </div>
                 </div>
                 
@@ -193,7 +185,9 @@ function countUniqueMedReps(calls) {
   return new Set(calls.map(c => c.medRep)).size
 }
 
-function ReportContent({ calls, config, onToggleMedRep, expandedMedReps }) {
+function ReportContent({ calls, config, onToggleMedRep, expandedMedReps, onReportDeleted }) {
+  const [deleting, setDeleting] = useState(false)
+  
   const byMedRep = {}
   const byMedRepProduct = {}
   
@@ -201,13 +195,14 @@ function ReportContent({ calls, config, onToggleMedRep, expandedMedReps }) {
     byMedRep[c.medRep] = byMedRep[c.medRep] || []
     byMedRep[c.medRep].push(c.score)
     
-    // Group by med rep and product, keeping individual calls with dates
+    // Group by med rep and product, keeping individual calls with dates and IDs
     const key = `${c.medRep}_${c.productId}`
     byMedRepProduct[key] = byMedRepProduct[key] || { medRep: c.medRep, productId: c.productId, calls: [] }
     
-    // Preserve individual calls with all their details including dates
+    // Preserve individual calls with all their details including dates and IDs
     if (c.messages && Array.isArray(c.messages)) {
       byMedRepProduct[key].calls.push({
+        id: c.id,
         date: c.date || 'No date',
         messages: c.messages,
         note: c.note || '',
@@ -215,6 +210,20 @@ function ReportContent({ calls, config, onToggleMedRep, expandedMedReps }) {
       })
     }
   })
+
+  async function handleDelete(callId) {
+    if (confirm('Are you sure you want to delete this call?')) {
+      try {
+        setDeleting(true)
+        await deleteCall(callId)
+        onReportDeleted()
+      } catch (err) {
+        alert('Error deleting call: ' + err.message)
+      } finally {
+        setDeleting(false)
+      }
+    }
+  }
 
   return (
     <div style={{marginTop: 24}}>
@@ -273,10 +282,38 @@ function ReportContent({ calls, config, onToggleMedRep, expandedMedReps }) {
                           {productData.calls && productData.calls.length > 0 ? (
                             <div style={{display: 'flex', flexDirection: 'column', gap: 12}}>
                               {productData.calls.map((callData, callIdx) => (
-                                <div key={callIdx} style={{padding: 12, background: '#f9f9f9', borderRadius: 6, borderLeft: '4px solid #FEED00', transition: 'background 0.2s ease'}}
+                                <div key={callIdx} style={{padding: 12, background: '#f9f9f9', borderRadius: 6, borderLeft: '4px solid #FEED00', transition: 'background 0.2s ease', position: 'relative'}}
                                   onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
                                   onMouseLeave={e => e.currentTarget.style.background = '#f9f9f9'}
                                 >
+                                  <button
+                                    onClick={() => handleDelete(callData.id)}
+                                    disabled={deleting}
+                                    style={{
+                                      position: 'absolute',
+                                      top: 8,
+                                      right: 8,
+                                      background: '#ec4899',
+                                      color: '#fff',
+                                      border: 'none',
+                                      padding: '4px 8px',
+                                      borderRadius: 4,
+                                      cursor: deleting ? 'not-allowed' : 'pointer',
+                                      fontSize: '0.8em',
+                                      fontWeight: 600,
+                                      opacity: deleting ? 0.6 : 1,
+                                      transition: 'background 0.2s ease'
+                                    }}
+                                    onMouseEnter={e => {
+                                      if (!deleting) e.target.style.background = '#db2777'
+                                    }}
+                                    onMouseLeave={e => {
+                                      if (!deleting) e.target.style.background = '#ec4899'
+                                    }}
+                                  >
+                                    🗑️ Delete
+                                  </button>
+                                  
                                   <div style={{fontSize: '0.9em', color: '#666', marginBottom: 8, fontWeight: 600}}>
                                     📅 {callData.date}
                                   </div>
