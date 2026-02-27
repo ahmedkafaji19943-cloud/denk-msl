@@ -556,6 +556,27 @@ footer{
   border-top-color: #374151 !important;
 }
 
+.night .mr-reports .mr-group{
+  border-color: #374151 !important;
+  background: #111827;
+}
+
+.night .mr-reports .mr-group-head{
+  background: #1f2937 !important;
+  border-bottom-color: #374151 !important;
+  color: #f3f4f6;
+}
+
+.night .mr-reports .mr-call{
+  background: #1f2937 !important;
+  border-color: #374151 !important;
+  color: #e5e7eb;
+}
+
+.night .mr-reports strong{
+  color: #f3f4f6;
+}
+
 /* Override heading colors */
 .night h1, .night h2, .night h3, .night h4, .night h5, .night h6,
 .night strong, .night b {

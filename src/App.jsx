@@ -6,6 +6,7 @@ import FirebaseLogin from './components/FirebaseLogin'
 import LogCall from './components/LogCall'
 import MessagesEdit from './components/MessagesEdit'
 import Reports from './components/Reports'
+import MRReports from './components/MRReports'
 import ProductManager from './components/ProductManager'
 import MedRepManager from './components/MedRepManager'
 import PlanManager from './components/PlanManager'
@@ -124,6 +125,7 @@ export default function App() {
                 </>
               )}
               <button onClick={() => setTab('mslreport')} className={tab==='mslreport'? 'active':''}>MSL Report</button>
+              <button onClick={() => setTab('mrreport')} className={tab==='mrreport'? 'active':''}>MR Reports</button>
             </div>
 
             <div className="meta">
@@ -140,6 +142,7 @@ export default function App() {
                 {tab==='products' && <ProductManager config={config} onProductAdded={reloadConfig} />}
                 {tab==='medreps' && <MedRepManager config={config} onMedRepsUpdated={reloadConfig} />}
                 {tab==='mslreport' && <Reports mslId={mslInfo.id} mslName={mslInfo.name} isManager={mslInfo?.manager || false} config={config} />}
+                {tab==='mrreport' && <MRReports config={config} />}
               </>
             )}
           </div>
