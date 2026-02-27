@@ -81,11 +81,10 @@ export async function getSharedConfig(bypassCache = false) {
     let config = snap.exists() ? snap.data() : MSL_DATA
     
     // Always use MSL_DATA's msls as source of truth (ensures new MSLs are available)
+    // But preserve Firestore medReps and products data if it exists
     config = {
       ...config,
-      msls: MSL_DATA.msls,
-      medReps: MSL_DATA.medReps,
-      products: MSL_DATA.products
+      msls: MSL_DATA.msls
     }
     
     configCache = config
