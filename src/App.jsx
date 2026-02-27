@@ -97,16 +97,18 @@ export default function App() {
         ) : !mslInfo ? (
           <div className="card" style={{margin: '20px', padding: '20px', background: '#fee2e2', border: '2px solid #ec4899', borderRadius: '8px'}}>
             <h2 style={{color: '#ec4899', marginBottom: '12px'}}>⚠️ Account Not Configured</h2>
-            <p>Your Firebase user email ({user.email}) or UID ({user.uid}) is not configured in the system.</p>
-            <p>Please contact an administrator to add your account.</p>
-            <details style={{marginTop: '12px', padding: '12px', background: '#fff', borderRadius: '4px', cursor: 'pointer'}}>
-              <summary>Debug Info</summary>
-              <pre style={{marginTop: '8px', fontSize: '0.85em', overflow: 'auto', maxHeight: '200px'}}>
-{`Email: ${user.email}
-UID: ${user.uid}
-Config MSLs: ${config?.msls?.map(m => `${m.name} (${m.email})`).join(', ') || 'Loading...'}`}
-              </pre>
-            </details>
+            <p>Your Firebase account is not found in the system configuration.</p>
+            <p style={{marginTop: '12px', marginBottom: '12px', fontSize: '0.95em', fontFamily: 'monospace', background: '#fff', padding: '12px', borderRadius: '4px', wordBreak: 'break-all'}}>
+              <strong>Your Firebase Email:</strong> {user?.email || 'N/A'}<br/>
+              <strong>Your Firebase UID:</strong> {user?.uid || 'N/A'}
+            </p>
+            <p>Please provide the above details to your administrator.</p>
+            <p style={{marginTop: '12px', fontSize: '0.9em', color: '#555'}}>Configured accounts:</p>
+            <ul style={{marginLeft: '20px', marginTop: '8px', fontSize: '0.9em'}}>
+              {config?.msls?.map((msl, idx) => (
+                <li key={idx}>{msl.name} ({msl.email || 'no email'}) - UID: {msl.uid || 'no uid'}</li>
+              )) || <li>No MSLs configured</li>}
+            </ul>
             <button onClick={handleLogout} style={{marginTop: '16px', padding: '8px 16px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9em'}}>Logout</button>
           </div>
         ) : (
@@ -130,7 +132,7 @@ Config MSLs: ${config?.msls?.map(m => `${m.name} (${m.email})`).join(', ') || 'L
               <button onClick={handleLogout} style={{marginLeft: 8}}>Logout</button>
             </div>
 
-            {config && (
+            {config && mslInfo && (
               <>
                 {tab==='log' && <LogCall user={user} mslId={mslInfo.id} config={config} />}
                 {tab==='plan' && <PlanManager mslId={mslInfo.id} mslName={mslInfo.name} config={config} />}
