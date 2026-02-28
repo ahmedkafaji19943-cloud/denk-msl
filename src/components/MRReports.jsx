@@ -15,11 +15,14 @@ export default function MRReports({ config }) {
   }, [])
 
   useEffect(() => {
-    // Reset med rep filter if it's not in the available options after province change
-    if (medRepFilter !== 'all' && !medRepOptions.includes(medRepFilter)) {
-      setMedRepFilter('all')
+    // Reset med rep filter if province changes and selected med rep is not in the new province
+    if (provinceFilter !== 'all' && medRepFilter !== 'all') {
+      const selectedMedRepProvince = medRepToProvince[medRepFilter]
+      if (selectedMedRepProvince !== provinceFilter) {
+        setMedRepFilter('all')
+      }
     }
-  }, [provinceFilter, medRepOptions])
+  }, [provinceFilter, medRepToProvince, medRepFilter])
 
   async function loadCalls() {
     try {
