@@ -22,11 +22,11 @@ const MSL_DATA = {
     { id: 'msl5', name: 'Obaidi', email: 'obaidi@denk.local', uid: 'CBtwsJOTekNbqs08XFiKESZnu3y1', reportsOnly: true }
   ],
   medReps: [
-    { name: 'Yaman Ali', zone: 'North', line: '' },
-    { name: 'Mohammed Luqman', zone: 'Central', line: '' },
-    { name: 'Erjwan Thaar', zone: 'South', line: '' },
-    { name: 'Sabreen Majid', zone: 'East', line: '' },
-    { name: 'Ibraheem Jumaa', zone: 'West', line: '' }
+    { name: 'Yaman Ali', province: 'Baghdad', zone: 'North', line: '' },
+    { name: 'Mohammed Luqman', province: 'Baghdad', zone: 'Central', line: '' },
+    { name: 'Erjwan Thaar', province: 'Baghdad', zone: 'South', line: '' },
+    { name: 'Sabreen Majid', province: 'Baghdad', zone: 'East', line: '' },
+    { name: 'Ibraheem Jumaa', province: 'Baghdad', zone: 'West', line: '' }
   ],
   products: [
     {
