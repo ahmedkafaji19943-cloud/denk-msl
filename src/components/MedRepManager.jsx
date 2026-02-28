@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { addOrUpdateMedRep, removeMedRep } from '../firestoreStorage'
+import React, { useState, useEffect } from 'react'
+import { addOrUpdateMedRep, removeMedRep, getAllCalls } from '../firestoreStorage'
 
 export default function MedRepManager({ config, onMedRepsUpdated }) {
   const [showForm, setShowForm] = useState(false)
@@ -12,7 +12,39 @@ export default function MedRepManager({ config, onMedRepsUpdated }) {
   const [editName, setEditName] = useState('')
   const [editProvince, setEditProvince] = useState('')
   const [editZone, setEditZone] = useState('')
-  const [editLine, setEditLine] = useState('')
+  const [callStats, setCallStats] = useState({})
+
+  useEffect(() => {
+    loadCallStats()
+  }, [config])
+
+  async function loadCallStats() {
+    try {
+      const calls = await getAllCalls()
+      const stats = {}
+      
+      // Group calls by med rep and calculate stats
+      calls.forEach(call => {
+        const medRepName = call.medRep
+        if (!stats[medRepName]) {
+          stats[medRepName] = { count: 0, lastDate: null }
+        }
+        stats[medRepName].count += 1
+        
+        // Parse date and keep the most recent
+        if (call.date) {
+          const callDate = new Date(call.date)
+          if (!stats[medRepName].lastDate || callDate > stats[medRepName].lastDate) {
+            stats[medRepName].lastDate = callDate
+          }
+        }
+      })
+      
+      setCallStats(stats)
+    } catch (err) {
+      console.error('Error loading call stats:', err)
+    }
+  }
 
   async function handleAddMedRep() {
     if (!newMedRepName.trim()) {
@@ -30,7 +62,10 @@ export default function MedRepManager({ config, onMedRepsUpdated }) {
       setNewLine('')
       setShowForm(false)
       // Refresh config in background, don't wait
-      setTimeout(() => onMedRepsUpdated(), 100)
+      setTimeout(() => {
+        onMedRepsUpdated()
+        loadCallStats()
+      }, 100)
     } catch (err) {
       alert('Error: ' + err.message)
       setSaving(false)
@@ -49,7 +84,10 @@ export default function MedRepManager({ config, onMedRepsUpdated }) {
       alert('Med rep updated!')
       setEditingMedRep(null)
       // Refresh config in background, don't wait
-      setTimeout(() => onMedRepsUpdated(), 100)
+      setTimeout(() => {
+        onMedRepsUpdated()
+        loadCallStats()
+      }, 100)
     } catch (err) {
       alert('Error: ' + err.message)
       setSaving(false)
@@ -64,7 +102,10 @@ export default function MedRepManager({ config, onMedRepsUpdated }) {
       await removeMedRep(medRepName)
       alert('Med rep removed!')
       // Refresh config in background, don't wait
-      setTimeout(() => onMedRepsUpdated(), 100)
+      setTimeout(() => {
+        onMedRepsUpdated()
+        loadCallStats()
+      }, 100)
     } catch (err) {
       alert('Error: ' + err.message)
       setSaving(false)
@@ -146,30 +187,38 @@ export default function MedRepManager({ config, onMedRepsUpdated }) {
 
       {medReps.length > 0 ? (
         <ul>
-          {medReps.map((rep, i) => (
-            <li key={i} style={{padding: '10px', border: '1px solid #eee', borderRadius: 6, marginBottom: 8}}>
-              <div><strong>{rep.name}</strong></div>
-              {rep.province && <div className="muted"><small>🗺️ Province: {rep.province}</small></div>}
-              {rep.zone && <div className="muted"><small>Zone: {rep.zone}</small></div>}
-              {rep.line && <div className="muted"><small>Line: {rep.line}</small></div>}
-              <div style={{display: 'flex', gap: 8, marginTop: 6}}>
-                <button 
-                  className="secondary" 
-                  onClick={() => { setEditingMedRep(rep.name); setEditName(rep.name); setEditProvince(rep.province || ''); setEditZone(rep.zone || ''); setEditLine(rep.line || ''); }}
-                  style={{padding: 4, fontSize: '0.85em'}}
-                >
-                  Edit
-                </button>
-                <button 
-                  className="secondary" 
-                  onClick={() => handleRemove(rep.name)}
-                  style={{padding: 4, fontSize: '0.85em'}}
-                >
-                  Remove
-                </button>
-              </div>
-            </li>
-          ))}
+          {medReps.map((rep, i) => {
+            const stats = callStats[rep.name] || { count: 0, lastDate: null }
+            const lastCallText = stats.lastDate ? new Date(stats.lastDate).toLocaleDateString() : 'Never'
+            return (
+              <li key={i} style={{padding: '10px', border: '1px solid #eee', borderRadius: 6, marginBottom: 8}}>
+                <div><strong>{rep.name}</strong></div>
+                {rep.province && <div className="muted"><small>🗺️ Province: {rep.province}</small></div>}
+                {rep.zone && <div className="muted"><small>Zone: {rep.zone}</small></div>}
+                {rep.line && <div className="muted"><small>Line: {rep.line}</small></div>}
+                <div style={{display: 'flex', gap: 12, marginTop: 8, fontSize: '0.9em'}}>
+                  <div style={{color: '#6366f1', fontWeight: 500}}>📞 Calls: {stats.count}</div>
+                  <div style={{color: '#ec4899', fontWeight: 500}}>📅 Last Call: {lastCallText}</div>
+                </div>
+                <div style={{display: 'flex', gap: 8, marginTop: 6}}>
+                  <button 
+                    className="secondary" 
+                    onClick={() => { setEditingMedRep(rep.name); setEditName(rep.name); setEditProvince(rep.province || ''); setEditZone(rep.zone || ''); setEditLine(rep.line || ''); }}
+                    style={{padding: 4, fontSize: '0.85em'}}
+                  >
+                    Edit
+                  </button>
+                  <button 
+                    className="secondary" 
+                    onClick={() => handleRemove(rep.name)}
+                    style={{padding: 4, fontSize: '0.85em'}}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </li>
+            )
+          })}
         </ul>
       ) : (
         <div className="muted">No med reps yet</div>
