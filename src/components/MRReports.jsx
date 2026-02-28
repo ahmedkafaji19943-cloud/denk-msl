@@ -14,16 +14,6 @@ export default function MRReports({ config }) {
     loadCalls()
   }, [])
 
-  useEffect(() => {
-    // Reset med rep filter if province changes and selected med rep is not in the new province
-    if (provinceFilter !== 'all' && medRepFilter !== 'all') {
-      const selectedMedRepProvince = medRepToProvince[medRepFilter]
-      if (selectedMedRepProvince !== provinceFilter) {
-        setMedRepFilter('all')
-      }
-    }
-  }, [provinceFilter, medRepToProvince, medRepFilter])
-
   async function loadCalls() {
     try {
       setLoading(true)
