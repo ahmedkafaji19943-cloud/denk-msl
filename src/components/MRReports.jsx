@@ -5,6 +5,7 @@ export default function MRReports({ config }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [calls, setCalls] = useState([])
+  const [provinceFilter, setProvinceFilter] = useState('all')
   const [medRepFilter, setMedRepFilter] = useState('all')
   const [mslFilter, setMslFilter] = useState('all')
   const [dateFilter, setDateFilter] = useState('')
@@ -43,13 +44,34 @@ export default function MRReports({ config }) {
     return Array.from(new Set([...namesFromCalls, ...namesFromConfig])).sort((a, b) => a.localeCompare(b))
   }, [calls, config])
 
+  const provinceOptions = useMemo(() => {
+    const provinces = (config?.medReps || [])
+      .map(m => (typeof m === 'string' ? null : m?.province))
+      .filter(Boolean)
+    return Array.from(new Set(provinces)).sort((a, b) => a.localeCompare(b))
+  }, [config])
+
   const mslOptions = useMemo(() => {
     return (config?.msls || []).filter(m => !m.reportsOnly)
+  }, [config])
+
+  const medRepToProvince = useMemo(() => {
+    const map = {}
+    ;(config?.medReps || []).forEach(m => {
+      if (typeof m !== 'string') {
+        map[m.name] = m.province
+      }
+    })
+    return map
   }, [config])
 
   const filteredCalls = useMemo(() => {
     return calls
       .filter(call => {
+        if (provinceFilter !== 'all') {
+          const medRepProvince = medRepToProvince[call.medRep]
+          if (medRepProvince !== provinceFilter) return false
+        }
         if (medRepFilter !== 'all' && call.medRep !== medRepFilter) return false
         if (mslFilter !== 'all' && call.mslId !== mslFilter) return false
         if (dateFilter && call.date !== dateFilter) return false
@@ -60,7 +82,7 @@ export default function MRReports({ config }) {
         const dateB = new Date(b.date || 0).getTime()
         return dateB - dateA
       })
-  }, [calls, medRepFilter, mslFilter, dateFilter])
+  }, [calls, provinceFilter, medRepFilter, mslFilter, dateFilter, medRepToProvince])
 
   const groupedByMedRep = useMemo(() => {
     const groups = {}
@@ -83,6 +105,16 @@ export default function MRReports({ config }) {
       <div className="muted" style={{ marginBottom: 16 }}>View complete call history per Med Rep</div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginBottom: 20 }}>
+        <div>
+          <label>Filter by Province</label>
+          <select value={provinceFilter} onChange={e => setProvinceFilter(e.target.value)}>
+            <option value="all">All Provinces</option>
+            {provinceOptions.map(name => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </select>
+        </div>
+
         <div>
           <label>Filter by Med Rep</label>
           <select value={medRepFilter} onChange={e => setMedRepFilter(e.target.value)}>
@@ -112,6 +144,7 @@ export default function MRReports({ config }) {
       <div style={{ marginBottom: 20 }}>
         <button
           onClick={() => {
+            setProvinceFilter('all')
             setMedRepFilter('all')
             setMslFilter('all')
             setDateFilter('')
@@ -131,7 +164,12 @@ export default function MRReports({ config }) {
           {groupedByMedRep.map(group => (
             <div key={group.medRep} className="mr-group" style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
               <div className="mr-group-head" style={{ padding: 14, background: '#f9fafb', borderBottom: '1px solid var(--border)', fontWeight: 700 }}>
-                👤 {group.medRep} ({group.calls.length} call{group.calls.length !== 1 ? 's' : ''})
+                <div>👤 {group.medRep} ({group.calls.length} call{group.calls.length !== 1 ? 's' : ''})</div>
+                {medRepToProvince[group.medRep] && (
+                  <div style={{ fontSize: '0.85em', marginTop: 6, color: '#6b7280' }}>
+                    🗺️ {medRepToProvince[group.medRep]}
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 14 }}>

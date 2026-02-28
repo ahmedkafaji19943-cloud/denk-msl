@@ -316,7 +316,7 @@ export async function deleteProduct(productId) {
 }
 
 // Add or update a med rep
-export async function addOrUpdateMedRep(medRepName, zone = '', line = '') {
+export async function addOrUpdateMedRep(medRepName, province = '', zone = '', line = '') {
   try {
     const ref = doc(db, 'config', 'app')
     const snap = await getDoc(ref)
@@ -333,15 +333,15 @@ export async function addOrUpdateMedRep(medRepName, zone = '', line = '') {
     // Copy and convert med reps
     let medReps = data.medReps.map(m => {
       if (!m) return null
-      return typeof m === 'string' ? { name: m, zone: '', line: '' } : m
+      return typeof m === 'string' ? { name: m, province: '', zone: '', line: '' } : m
     }).filter(m => m !== null)
     
     // Update or add
     const idx = medReps.findIndex(m => m.name === medRepName)
     if (idx >= 0) {
-      medReps[idx] = { name: medRepName, zone: zone || '', line: line || '' }
+      medReps[idx] = { name: medRepName, province: province || '', zone: zone || '', line: line || '' }
     } else {
-      medReps.push({ name: medRepName, zone: zone || '', line: line || '' })
+      medReps.push({ name: medRepName, province: province || '', zone: zone || '', line: line || '' })
     }
     
     // Save with updated data
@@ -376,7 +376,7 @@ export async function removeMedRep(medRepName) {
     
     let medReps = data.medReps.map(m => {
       if (!m) return null
-      return typeof m === 'string' ? { name: m, zone: '', line: '' } : m
+      return typeof m === 'string' ? { name: m, province: '', zone: '', line: '' } : m
     }).filter(m => m !== null)
     
     const filteredReps = medReps.filter(m => m.name !== medRepName)

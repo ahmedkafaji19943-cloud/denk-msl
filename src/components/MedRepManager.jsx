@@ -4,11 +4,13 @@ import { addOrUpdateMedRep, removeMedRep } from '../firestoreStorage'
 export default function MedRepManager({ config, onMedRepsUpdated }) {
   const [showForm, setShowForm] = useState(false)
   const [newMedRepName, setNewMedRepName] = useState('')
+  const [newProvince, setNewProvince] = useState('')
   const [newZone, setNewZone] = useState('')
   const [newLine, setNewLine] = useState('')
   const [saving, setSaving] = useState(false)
   const [editingMedRep, setEditingMedRep] = useState(null)
   const [editName, setEditName] = useState('')
+  const [editProvince, setEditProvince] = useState('')
   const [editZone, setEditZone] = useState('')
   const [editLine, setEditLine] = useState('')
 
@@ -20,9 +22,10 @@ export default function MedRepManager({ config, onMedRepsUpdated }) {
 
     setSaving(true)
     try {
-      await addOrUpdateMedRep(newMedRepName.trim(), newZone.trim(), newLine.trim())
+      await addOrUpdateMedRep(newMedRepName.trim(), newProvince.trim(), newZone.trim(), newLine.trim())
       alert('Med rep added!')
       setNewMedRepName('')
+      setNewProvince('')
       setNewZone('')
       setNewLine('')
       setShowForm(false)
@@ -42,7 +45,7 @@ export default function MedRepManager({ config, onMedRepsUpdated }) {
 
     setSaving(true)
     try {
-      await addOrUpdateMedRep(editName.trim(), editZone.trim(), editLine.trim())
+      await addOrUpdateMedRep(editName.trim(), editProvince.trim(), editZone.trim(), editLine.trim())
       alert('Med rep updated!')
       setEditingMedRep(null)
       // Refresh config in background, don't wait
@@ -68,7 +71,7 @@ export default function MedRepManager({ config, onMedRepsUpdated }) {
     }
   }
 
-  const medReps = (config?.medReps || []).map(m => typeof m === 'string' ? { name: m, zone: '', line: '' } : m)
+  const medReps = (config?.medReps || []).map(m => typeof m === 'string' ? { name: m, province: '', zone: '', line: '' } : m)
 
   return (
     <div className="card">
@@ -84,6 +87,13 @@ export default function MedRepManager({ config, onMedRepsUpdated }) {
             placeholder="e.g., Dr. Ahmed Hassan"
             value={newMedRepName}
             onChange={e => setNewMedRepName(e.target.value)}
+          />
+          <label>Province</label>
+          <input 
+            type="text" 
+            placeholder="e.g., Baghdad, Basra, Mosul"
+            value={newProvince}
+            onChange={e => setNewProvince(e.target.value)}
           />
           <label>Zone</label>
           <input 
@@ -119,6 +129,8 @@ export default function MedRepManager({ config, onMedRepsUpdated }) {
           <h4>Edit Med Rep</h4>
           <label>Name</label>
           <input value={editName} onChange={e => setEditName(e.target.value)} />
+          <label>Province</label>
+          <input value={editProvince} onChange={e => setEditProvince(e.target.value)} />
           <label>Zone</label>
           <input value={editZone} onChange={e => setEditZone(e.target.value)} />
           <label>Line / Department</label>
@@ -137,12 +149,13 @@ export default function MedRepManager({ config, onMedRepsUpdated }) {
           {medReps.map((rep, i) => (
             <li key={i} style={{padding: '10px', border: '1px solid #eee', borderRadius: 6, marginBottom: 8}}>
               <div><strong>{rep.name}</strong></div>
+              {rep.province && <div className="muted"><small>🗺️ Province: {rep.province}</small></div>}
               {rep.zone && <div className="muted"><small>Zone: {rep.zone}</small></div>}
               {rep.line && <div className="muted"><small>Line: {rep.line}</small></div>}
               <div style={{display: 'flex', gap: 8, marginTop: 6}}>
                 <button 
                   className="secondary" 
-                  onClick={() => { setEditingMedRep(rep.name); setEditName(rep.name); setEditZone(rep.zone); setEditLine(rep.line); }}
+                  onClick={() => { setEditingMedRep(rep.name); setEditName(rep.name); setEditProvince(rep.province || ''); setEditZone(rep.zone || ''); setEditLine(rep.line || ''); }}
                   style={{padding: 4, fontSize: '0.85em'}}
                 >
                   Edit
