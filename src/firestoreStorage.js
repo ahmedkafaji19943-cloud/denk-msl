@@ -87,6 +87,26 @@ export async function getSharedConfig(bypassCache = false) {
       msls: MSL_DATA.msls
     }
     
+    // Ensure all products have messages field (fix for missing messages)
+    if (config.products && Array.isArray(config.products)) {
+      config.products = config.products.map(product => {
+        if (!product.messages || !Array.isArray(product.messages) || product.messages.length === 0) {
+          return {
+            ...product,
+            messages: [
+              'Key benefit 1',
+              'Key benefit 2',
+              'Key benefit 3',
+              'Clinical data',
+              'Safety profile',
+              'Usage recommendation'
+            ]
+          }
+        }
+        return product
+      })
+    }
+    
     configCache = config
     cacheTime = Date.now()
     return configCache
