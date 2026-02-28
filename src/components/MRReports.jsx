@@ -127,6 +127,11 @@ export default function MRReports({ config }) {
       <h2>MR Reports</h2>
       <div className="muted" style={{ marginBottom: 16 }}>View complete call history per Med Rep</div>
 
+      {/* Debug Info */}
+      <div style={{ fontSize: '0.85em', color: '#999', marginBottom: 16, padding: 12, background: '#f5f5f5', borderRadius: 6 }}>
+        <div>📊 Debug: {calls.length} total calls | {filteredCalls.length} filtered | Provinces: {provinceOptions.length} | Med Reps: {medRepOptions.length}</div>
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginBottom: 20 }}>
         <div>
           <label>Filter by Province</label>
