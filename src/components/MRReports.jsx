@@ -14,6 +14,13 @@ export default function MRReports({ config }) {
     loadCalls()
   }, [])
 
+  useEffect(() => {
+    // Reset med rep filter if it's not in the available options after province change
+    if (medRepFilter !== 'all' && !medRepOptions.includes(medRepFilter)) {
+      setMedRepFilter('all')
+    }
+  }, [provinceFilter, medRepOptions])
+
   async function loadCalls() {
     try {
       setLoading(true)
@@ -37,12 +44,25 @@ export default function MRReports({ config }) {
   }, [config])
 
   const medRepOptions = useMemo(() => {
-    const namesFromCalls = calls.map(c => c.medRep).filter(Boolean)
-    const namesFromConfig = (config?.medReps || [])
-      .map(m => (typeof m === 'string' ? m : m?.name))
-      .filter(Boolean)
-    return Array.from(new Set([...namesFromCalls, ...namesFromConfig])).sort((a, b) => a.localeCompare(b))
-  }, [calls, config])
+    let names = []
+    
+    if (provinceFilter !== 'all') {
+      // Show only med reps from selected province
+      names = (config?.medReps || [])
+        .filter(m => (typeof m === 'string' ? false : m?.province === provinceFilter))
+        .map(m => (typeof m === 'string' ? m : m?.name))
+        .filter(Boolean)
+    } else {
+      // Show all med reps
+      const namesFromCalls = calls.map(c => c.medRep).filter(Boolean)
+      const namesFromConfig = (config?.medReps || [])
+        .map(m => (typeof m === 'string' ? m : m?.name))
+        .filter(Boolean)
+      names = Array.from(new Set([...namesFromCalls, ...namesFromConfig]))
+    }
+    
+    return names.sort((a, b) => a.localeCompare(b))
+  }, [calls, config, provinceFilter])
 
   const provinceOptions = useMemo(() => {
     const provinces = (config?.medReps || [])
