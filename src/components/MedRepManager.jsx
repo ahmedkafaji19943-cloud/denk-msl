@@ -12,7 +12,9 @@ export default function MedRepManager({ config, onMedRepsUpdated }) {
   const [editName, setEditName] = useState('')
   const [editProvince, setEditProvince] = useState('')
   const [editZone, setEditZone] = useState('')
+  const [editLine, setEditLine] = useState('')
   const [callStats, setCallStats] = useState({})
+  const [sortBy, setSortBy] = useState('recent')
 
   useEffect(() => {
     loadCallStats()
@@ -114,6 +116,31 @@ export default function MedRepManager({ config, onMedRepsUpdated }) {
 
   const medReps = (config?.medReps || []).map(m => typeof m === 'string' ? { name: m, province: '', zone: '', line: '' } : m)
 
+  // Sort med reps based on selected criteria
+  const sortedMedReps = [...medReps].sort((a, b) => {
+    const statsA = callStats[a.name] || { count: 0, lastDate: null }
+    const statsB = callStats[b.name] || { count: 0, lastDate: null }
+    
+    if (sortBy === 'recent') {
+      // Recently to oldest (newer dates first)
+      const dateA = statsA.lastDate ? new Date(statsA.lastDate).getTime() : 0
+      const dateB = statsB.lastDate ? new Date(statsB.lastDate).getTime() : 0
+      return dateB - dateA
+    } else if (sortBy === 'oldest') {
+      // Oldest to recently (older dates first)
+      const dateA = statsA.lastDate ? new Date(statsA.lastDate).getTime() : Infinity
+      const dateB = statsB.lastDate ? new Date(statsB.lastDate).getTime() : Infinity
+      return dateA - dateB
+    } else if (sortBy === 'calls-high') {
+      // Most calls to least
+      return statsB.count - statsA.count
+    } else if (sortBy === 'calls-low') {
+      // Least calls to most
+      return statsA.count - statsB.count
+    }
+    return 0
+  })
+
   return (
     <div className="card">
       <h2>Manage Med Reps</h2>
@@ -165,6 +192,21 @@ export default function MedRepManager({ config, onMedRepsUpdated }) {
       )}
 
       <h3 style={{marginTop: 24}}>Current Med Reps</h3>
+      
+      <div style={{marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center'}}>
+        <label style={{marginBottom: 0}}>Sort by:</label>
+        <select 
+          value={sortBy} 
+          onChange={e => setSortBy(e.target.value)}
+          style={{padding: '6px 10px', borderRadius: 4, border: '1px solid #ddd', fontSize: '0.95em'}}
+        >
+          <option value="recent">Recently to Oldest</option>
+          <option value="oldest">Oldest to Recently</option>
+          <option value="calls-high">Most Calls</option>
+          <option value="calls-low">Least Calls</option>
+        </select>
+      </div>
+
       {editingMedRep ? (
         <div style={{marginBottom: 20}}>
           <h4>Edit Med Rep</h4>
@@ -187,7 +229,7 @@ export default function MedRepManager({ config, onMedRepsUpdated }) {
 
       {medReps.length > 0 ? (
         <ul>
-          {medReps.map((rep, i) => {
+          {sortedMedReps.map((rep, i) => {
             const stats = callStats[rep.name] || { count: 0, lastDate: null }
             const lastCallText = stats.lastDate ? new Date(stats.lastDate).toLocaleDateString() : 'Never'
             return (
