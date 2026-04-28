@@ -155,7 +155,7 @@ export default function App() {
                 {tab==='edit' && <MessagesEdit mslId={mslInfo.id} config={config} />}
                 {tab==='products' && <ProductManager config={config} onProductAdded={reloadConfig} />}
                 {tab==='medreps' && <MedRepManager config={config} onMedRepsUpdated={reloadConfig} />}
-                {tab==='accounts' && <AccountManager config={config} />}
+                {tab==='accounts' && <AccountManager config={config} onAccountAdded={reloadConfig} />}
                 {tab==='mslreport' && <Reports mslId={mslInfo.id} mslName={mslInfo.name} isManager={mslInfo?.manager || false} config={config} />}
                 {tab==='mrreport' && <MRReports config={config} allowedProvinces={userSettings?.allowedProvinces} />}
               </>

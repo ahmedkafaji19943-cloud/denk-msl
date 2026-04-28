@@ -15,8 +15,8 @@ import { db } from './firebase'
 
 const MSL_DATA = {
   msls: [
-    { id: 'msl1', name: 'Khaldoon Sattar', email: 'khaldoon@denk.local', manager: true },
-    { id: 'msl2', name: 'Ahmed AbdulKareem', email: 'ahmed@denk.local' },
+    { id: 'msl1', name: 'Khaldoon Sattar', email: 'khaldoon@denk.local' },
+    { id: 'msl2', name: 'Ahmed AbdulKareem', email: 'ahmed@denk.local', manager: true },
     { id: 'msl3', name: 'Ahmed Rabah', email: 'rabah@denk.local' },
     { id: 'msl4', name: 'Ali Kamil', email: 'ali@denk.local' },
     { id: 'msl5', name: 'Obaidi', email: 'obaidi@denk.local', uid: 'CBtwsJOTekNbqs08XFiKESZnu3y1', reportsOnly: true }
@@ -513,4 +513,56 @@ export async function getAllProvinces() {
     return []
   }
 }
+
+// Create new MSL user
+export async function createNewMslUser(newUser) {
+  try {
+    // newUser should have: name, email, allowedTabs, allowedProvinces, isReportsOnly
+    
+    // Generate next MSL ID
+    const cfg = await getSharedConfig()
+    const existingIds = cfg.msls.map(m => {
+      const match = m.id?.match(/msl(\d+)/)
+      return match ? parseInt(match[1]) : 0
+    })
+    const nextId = Math.max(...existingIds, 0) + 1
+    const mslId = `msl${nextId}`
+    
+    // Update config with new MSL
+    const configRef = doc(db, 'config', 'app')
+    const snap = await getDoc(configRef)
+    if (!snap.exists()) {
+      throw new Error('Config document missing.')
+    }
+    
+    let data = snap.data()
+    const newMslEntry = {
+      id: mslId,
+      name: newUser.name,
+      email: newUser.email,
+      reportsOnly: newUser.isReportsOnly || false
+    }
+    
+    data.msls = [...(data.msls || []), newMslEntry]
+    await setDoc(configRef, { ...data, updatedAt: serverTimestamp() })
+    
+    // Save user settings
+    await saveUserSettings(mslId, {
+      mslId,
+      allowedTabs: newUser.allowedTabs || ['mslReport', 'mrReport'],
+      allowedProvinces: newUser.allowedProvinces || [],
+      displayName: newUser.name,
+      email: newUser.email
+    })
+    
+    // Clear cache so new user appears immediately
+    configCache = null
+    
+    return { id: mslId, ...newMslEntry }
+  } catch (err) {
+    console.error('Error creating new MSL user:', err)
+    throw err
+  }
+}
+
 

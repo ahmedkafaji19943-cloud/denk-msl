@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { getUserSettings, saveUserSettings, getAllUserSettings, getAllProvinces } from '../firestoreStorage'
+import { getUserSettings, saveUserSettings, getAllUserSettings, getAllProvinces, createNewMslUser } from '../firestoreStorage'
 
-export default function AccountManager({ config }) {
+export default function AccountManager({ config, onAccountAdded }) {
   const [mslList, setMslList] = useState([])
   const [selectedMsl, setSelectedMsl] = useState(null)
   const [settings, setSettings] = useState(null)
@@ -9,6 +9,14 @@ export default function AccountManager({ config }) {
   const [saving, setSaving] = useState(false)
   const [allProvinces, setAllProvinces] = useState([])
   const [editMode, setEditMode] = useState(false)
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [newUser, setNewUser] = useState({
+    name: '',
+    email: '',
+    allowedTabs: ['mslReport', 'mrReport'],
+    allowedProvinces: [],
+    isReportsOnly: false
+  })
 
   useEffect(() => {
     loadData()
@@ -89,6 +97,67 @@ export default function AccountManager({ config }) {
     }
   }
 
+  function toggleNewUserTab(tabName) {
+    const newTabs = newUser.allowedTabs || []
+    if (newTabs.includes(tabName)) {
+      setNewUser({
+        ...newUser,
+        allowedTabs: newTabs.filter(t => t !== tabName)
+      })
+    } else {
+      setNewUser({
+        ...newUser,
+        allowedTabs: [...newTabs, tabName]
+      })
+    }
+  }
+
+  function toggleNewUserProvince(province) {
+    const newProvinces = newUser.allowedProvinces || []
+    if (newProvinces.includes(province)) {
+      setNewUser({
+        ...newUser,
+        allowedProvinces: newProvinces.filter(p => p !== province)
+      })
+    } else {
+      setNewUser({
+        ...newUser,
+        allowedProvinces: [...newProvinces, province]
+      })
+    }
+  }
+
+  async function handleCreateNewUser() {
+    if (!newUser.name.trim()) {
+      alert('Please enter user name')
+      return
+    }
+    if (!newUser.email.trim()) {
+      alert('Please enter email address')
+      return
+    }
+    
+    setSaving(true)
+    try {
+      const createdUser = await createNewMslUser(newUser)
+      alert(`New user "${newUser.name}" created successfully!`)
+      setShowCreateForm(false)
+      setNewUser({
+        name: '',
+        email: '',
+        allowedTabs: ['mslReport', 'mrReport'],
+        allowedProvinces: [],
+        isReportsOnly: false
+      })
+      // Reload accounts
+      setTimeout(() => onAccountAdded?.(), 100)
+    } catch (err) {
+      alert('Error: ' + err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   if (loading) return <div className="card">Loading accounts...</div>
 
   const tabOptions = [
@@ -109,7 +178,88 @@ export default function AccountManager({ config }) {
       <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '20px'}}>
         {/* Left: MSL List */}
         <div style={{border: '1px solid #eee', borderRadius: '6px', padding: '16px'}}>
-          <h3>MSL Accounts</h3>
+          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px'}}>
+            <h3 style={{margin: 0}}>MSL Accounts</h3>
+            <button
+              onClick={() => setShowCreateForm(!showCreateForm)}
+              style={{padding: '6px 12px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85em'}}
+            >
+              {showCreateForm ? 'Cancel' : '+ New User'}
+            </button>
+          </div>
+
+          {showCreateForm && (
+            <div style={{marginBottom: '16px', padding: '12px', background: '#f9f9f9', border: '1px solid #ddd', borderRadius: '4px'}}>
+              <h4>Create New MSL Account</h4>
+              
+              <label>Full Name</label>
+              <input 
+                type="text"
+                placeholder="e.g., Dr. Ahmed Hassan"
+                value={newUser.name}
+                onChange={e => setNewUser({...newUser, name: e.target.value})}
+                style={{width: '100%', marginBottom: '10px'}}
+              />
+              
+              <label>Email Address</label>
+              <input 
+                type="email"
+                placeholder="e.g., user@denk.local"
+                value={newUser.email}
+                onChange={e => setNewUser({...newUser, email: e.target.value})}
+                style={{width: '100%', marginBottom: '10px'}}
+              />
+
+              <label style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', cursor: 'pointer'}}>
+                <input 
+                  type="checkbox"
+                  checked={newUser.isReportsOnly}
+                  onChange={e => setNewUser({...newUser, isReportsOnly: e.target.checked})}
+                />
+                Reports Only (no call logging)
+              </label>
+
+              <label style={{fontSize: '0.9em', fontWeight: 600, display: 'block', marginBottom: '8px'}}>Default Allowed Tabs:</label>
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '10px'}}>
+                {['logCall', 'plan', 'messages', 'products', 'medReps', 'mslReport', 'mrReport'].map(tab => {
+                  const tabLabel = {logCall: 'Log Call', plan: 'Plan', messages: 'Messages', products: 'Products', medReps: 'Med Reps', mslReport: 'MSL Report', mrReport: 'MR Reports'}
+                  return (
+                    <label key={tab} style={{display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.85em'}}>
+                      <input
+                        type="checkbox"
+                        checked={(newUser.allowedTabs || []).includes(tab)}
+                        onChange={() => toggleNewUserTab(tab)}
+                      />
+                      {tabLabel[tab]}
+                    </label>
+                  )
+                })}
+              </div>
+
+              <label style={{fontSize: '0.9em', fontWeight: 600, display: 'block', marginBottom: '8px'}}>Allowed Provinces for MR Reports:</label>
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '10px'}}>
+                {allProvinces.map(province => (
+                  <label key={province} style={{display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.85em'}}>
+                    <input
+                      type="checkbox"
+                      checked={(newUser.allowedProvinces || []).includes(province)}
+                      onChange={() => toggleNewUserProvince(province)}
+                    />
+                    🗺️ {province}
+                  </label>
+                ))}
+              </div>
+
+              <button
+                onClick={handleCreateNewUser}
+                disabled={saving}
+                style={{width: '100%', padding: '8px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600}}
+              >
+                {saving ? 'Creating...' : 'Create Account'}
+              </button>
+            </div>
+          )}
+          
           <ul style={{listStyle: 'none', padding: 0}}>
             {mslList.map(msl => (
               <li key={msl.id}>
