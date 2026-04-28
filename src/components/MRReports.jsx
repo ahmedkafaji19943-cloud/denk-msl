@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { getAllCalls } from '../firestoreStorage'
 
-export default function MRReports({ config }) {
+export default function MRReports({ config, allowedProvinces }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [calls, setCalls] = useState([])
@@ -58,11 +58,18 @@ export default function MRReports({ config }) {
   }, [calls, config, provinceFilter])
 
   const provinceOptions = useMemo(() => {
-    const provinces = (config?.medReps || [])
+    let provinces = (config?.medReps || [])
       .map(m => (typeof m === 'string' ? null : m?.province))
       .filter(Boolean)
-    return Array.from(new Set(provinces)).sort((a, b) => a.localeCompare(b))
-  }, [config])
+    const uniqueProvinces = Array.from(new Set(provinces)).sort((a, b) => a.localeCompare(b))
+    
+    // If allowedProvinces is set, filter to only those
+    if (allowedProvinces && Array.isArray(allowedProvinces) && allowedProvinces.length > 0) {
+      return uniqueProvinces.filter(p => allowedProvinces.includes(p))
+    }
+    
+    return uniqueProvinces
+  }, [config, allowedProvinces])
 
   const mslOptions = useMemo(() => {
     return (config?.msls || []).filter(m => !m.reportsOnly)

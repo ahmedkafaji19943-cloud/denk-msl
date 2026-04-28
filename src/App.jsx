@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { auth } from './firebase'
-import { initializeSharedData, getSharedConfig } from './firestoreStorage'
+import { initializeSharedData, getSharedConfig, getUserSettings } from './firestoreStorage'
 import FirebaseLogin from './components/FirebaseLogin'
 import LogCall from './components/LogCall'
 import MessagesEdit from './components/MessagesEdit'
@@ -10,6 +10,7 @@ import MRReports from './components/MRReports'
 import ProductManager from './components/ProductManager'
 import MedRepManager from './components/MedRepManager'
 import PlanManager from './components/PlanManager'
+import AccountManager from './components/AccountManager'
 
 // Denk MSL Main App Component
 // Force rebuild - 2026-02-18
@@ -20,6 +21,7 @@ export default function App() {
   const [night, setNight] = useState(false)
   const [config, setConfig] = useState(null)
   const [mslInfo, setMslInfo] = useState(null)
+  const [userSettings, setUserSettings] = useState(null)
 
   // Initialize Firebase and listen for auth changes
   useEffect(() => {
@@ -38,6 +40,9 @@ export default function App() {
         }
         if (msl) {
           setMslInfo(msl)
+          // Load user settings
+          const settings = await getUserSettings(msl.id)
+          setUserSettings(settings)
           // If this is a reports-only user, set tab to mslreport
           if (msl.reportsOnly) {
             setTab('mslreport')
@@ -54,7 +59,15 @@ export default function App() {
   function handleLogout() {
     signOut(auth).catch(e => console.error('Logout error:', e))
     setMslInfo(null)
+    setUserSettings(null)
     setTab('log')
+  }
+
+  function canViewTab(tabId) {
+    // If no user settings exist, allow all tabs for backward compatibility
+    if (!userSettings || !userSettings.allowedTabs) return true
+    // If user has allowed tabs setting, check if this tab is allowed
+    return userSettings.allowedTabs.includes(tabId)
   }
 
   async function reloadConfig() {
@@ -117,15 +130,16 @@ export default function App() {
             <div className="tabs">
               {!mslInfo?.reportsOnly && (
                 <>
-                  <button onClick={() => setTab('log')} className={tab==='log'? 'active':''}>Log Call</button>
-                  <button onClick={() => setTab('plan')} className={tab==='plan'? 'active':''}>Plan</button>
-                  <button onClick={() => setTab('edit')} className={tab==='edit'? 'active':''}>Messages</button>
-                  <button onClick={() => setTab('products')} className={tab==='products'? 'active':''}>Products</button>
-                  <button onClick={() => setTab('medreps')} className={tab==='medreps'? 'active':''}>Med Reps</button>
+                  {canViewTab('logCall') && <button onClick={() => setTab('log')} className={tab==='log'? 'active':''}>Log Call</button>}
+                  {canViewTab('plan') && <button onClick={() => setTab('plan')} className={tab==='plan'? 'active':''}>Plan</button>}
+                  {canViewTab('messages') && <button onClick={() => setTab('edit')} className={tab==='edit'? 'active':''}>Messages</button>}
+                  {canViewTab('products') && <button onClick={() => setTab('products')} className={tab==='products'? 'active':''}>Products</button>}
+                  {canViewTab('medReps') && <button onClick={() => setTab('medreps')} className={tab==='medreps'? 'active':''}>Med Reps</button>}
+                  {mslInfo?.manager && <button onClick={() => setTab('accounts')} className={tab==='accounts'? 'active':''}>Account Mgmt</button>}
                 </>
               )}
-              <button onClick={() => setTab('mslreport')} className={tab==='mslreport'? 'active':''}>MSL Report</button>
-              <button onClick={() => setTab('mrreport')} className={tab==='mrreport'? 'active':''}>MR Reports</button>
+              {canViewTab('mslReport') && <button onClick={() => setTab('mslreport')} className={tab==='mslreport'? 'active':''}>MSL Report</button>}
+              {canViewTab('mrReport') && <button onClick={() => setTab('mrreport')} className={tab==='mrreport'? 'active':''}>MR Reports</button>}
             </div>
 
             <div className="meta">
@@ -141,8 +155,9 @@ export default function App() {
                 {tab==='edit' && <MessagesEdit mslId={mslInfo.id} config={config} />}
                 {tab==='products' && <ProductManager config={config} onProductAdded={reloadConfig} />}
                 {tab==='medreps' && <MedRepManager config={config} onMedRepsUpdated={reloadConfig} />}
+                {tab==='accounts' && <AccountManager config={config} />}
                 {tab==='mslreport' && <Reports mslId={mslInfo.id} mslName={mslInfo.name} isManager={mslInfo?.manager || false} config={config} />}
-                {tab==='mrreport' && <MRReports config={config} />}
+                {tab==='mrreport' && <MRReports config={config} allowedProvinces={userSettings?.allowedProvinces} />}
               </>
             )}
           </div>

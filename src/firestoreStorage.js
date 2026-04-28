@@ -456,3 +456,61 @@ export async function wasMessageUsedWithMedRep(medRep, productId, message, mslId
     return false
   }
 }
+
+// Account Management Functions
+
+// Get user settings (permissions, provinces, etc.)
+export async function getUserSettings(mslId) {
+  try {
+    const ref = doc(db, 'userSettings', mslId)
+    const snap = await getDoc(ref)
+    return snap.exists() ? snap.data() : null
+  } catch (err) {
+    console.error('Error fetching user settings:', err)
+    return null
+  }
+}
+
+// Save/update user settings
+export async function saveUserSettings(mslId, settings) {
+  try {
+    const ref = doc(db, 'userSettings', mslId)
+    await setDoc(ref, {
+      mslId,
+      ...settings,
+      updatedAt: serverTimestamp()
+    })
+  } catch (err) {
+    console.error('Error saving user settings:', err)
+    throw err
+  }
+}
+
+// Get all user settings (for management)
+export async function getAllUserSettings() {
+  try {
+    const snap = await getDocs(collection(db, 'userSettings'))
+    return snap.docs.map(d => d.data())
+  } catch (err) {
+    console.error('Error fetching all user settings:', err)
+    return []
+  }
+}
+
+// Get all available provinces from med reps
+export async function getAllProvinces() {
+  try {
+    const cfg = await getSharedConfig()
+    const provinces = new Set()
+    cfg.medReps?.forEach(rep => {
+      if (rep.province) {
+        provinces.add(rep.province)
+      }
+    })
+    return Array.from(provinces).sort()
+  } catch (err) {
+    console.error('Error fetching provinces:', err)
+    return []
+  }
+}
+
