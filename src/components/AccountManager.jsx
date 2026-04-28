@@ -10,6 +10,10 @@ export default function AccountManager({ config, onAccountAdded }) {
   const [allProvinces, setAllProvinces] = useState([])
   const [editMode, setEditMode] = useState(false)
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showPasswordReset, setShowPasswordReset] = useState(false)
+  const [resetPassword, setResetPassword] = useState('')
+  const [resetPasswordConfirm, setResetPasswordConfirm] = useState('')
+  const [recoveryEmail, setRecoveryEmail] = useState('ahmedkafaji1994@gmail.com')
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
@@ -174,6 +178,44 @@ export default function AccountManager({ config, onAccountAdded }) {
     }
   }
 
+  async function handleResetPassword() {
+    if (!resetPassword.trim()) {
+      alert('Please enter a new password')
+      return
+    }
+    if (resetPassword.length < 6) {
+      alert('Password must be at least 6 characters')
+      return
+    }
+    if (resetPassword !== resetPasswordConfirm) {
+      alert('Passwords do not match')
+      return
+    }
+
+    setSaving(true)
+    try {
+      // Update user settings with new password
+      const updatedSettings = {
+        ...settings,
+        password: resetPassword,
+        recoveryEmail: recoveryEmail
+      }
+      await saveUserSettings(selectedMsl.id, updatedSettings)
+      alert(`Password reset for ${selectedMsl.name}!\n\nRecovery email: ${recoveryEmail}\n\nPassword has been set.`)
+      setShowPasswordReset(false)
+      setResetPassword('')
+      setResetPasswordConfirm('')
+      // Reload the user settings
+      const userSettings = await getUserSettings(selectedMsl.id)
+      setSettings(userSettings)
+    } catch (err) {
+      alert('Error: ' + err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+
   if (loading) return <div className="card">Loading accounts...</div>
 
   const tabOptions = [
@@ -329,13 +371,62 @@ export default function AccountManager({ config, onAccountAdded }) {
                 <h3 style={{margin: '0 0 4px 0'}}>{selectedMsl.name}</h3>
                 <p style={{margin: '0', fontSize: '0.9em', color: '#666'}}>{selectedMsl.email}</p>
               </div>
-              <button
-                onClick={() => setEditMode(!editMode)}
-                style={{padding: '6px 12px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer'}}
-              >
-                {editMode ? 'Cancel' : 'Edit'}
-              </button>
+              <div style={{display: 'flex', gap: '8px'}}>
+                <button
+                  onClick={() => setShowPasswordReset(!showPasswordReset)}
+                  style={{padding: '6px 12px', background: '#ec4899', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9em'}}
+                >
+                  {showPasswordReset ? 'Cancel' : '🔑 Reset Password'}
+                </button>
+                <button
+                  onClick={() => setEditMode(!editMode)}
+                  style={{padding: '6px 12px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer'}}
+                >
+                  {editMode ? 'Cancel' : 'Edit'}
+                </button>
+              </div>
             </div>
+
+            {showPasswordReset ? (
+              <div style={{marginBottom: '20px', padding: '16px', background: '#fff', border: '2px solid #ec4899', borderRadius: '6px'}}>
+                <h4 style={{marginTop: 0, color: '#ec4899'}}>🔑 Reset Password for {selectedMsl.name}</h4>
+                
+                <label>New Password</label>
+                <input 
+                  type="password"
+                  placeholder="Minimum 6 characters"
+                  value={resetPassword}
+                  onChange={e => setResetPassword(e.target.value)}
+                  style={{width: '100%', marginBottom: '10px'}}
+                />
+
+                <label>Confirm Password</label>
+                <input 
+                  type="password"
+                  placeholder="Re-enter password"
+                  value={resetPasswordConfirm}
+                  onChange={e => setResetPasswordConfirm(e.target.value)}
+                  style={{width: '100%', marginBottom: '10px'}}
+                />
+
+                <label>Recovery Email Address</label>
+                <input 
+                  type="email"
+                  placeholder="Where password reset links should be sent"
+                  value={recoveryEmail}
+                  onChange={e => setRecoveryEmail(e.target.value)}
+                  style={{width: '100%', marginBottom: '10px'}}
+                />
+
+                <button
+                  onClick={handleResetPassword}
+                  disabled={saving}
+                  style={{width: '100%', padding: '10px', background: '#ec4899', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600}}
+                >
+                  {saving ? 'Resetting...' : 'Reset Password'}
+                </button>
+              </div>
+            ) : null}
 
             {editMode ? (
               <>
