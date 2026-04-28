@@ -552,7 +552,8 @@ export async function createNewMslUser(newUser) {
       allowedTabs: newUser.allowedTabs || ['mslReport', 'mrReport'],
       allowedProvinces: newUser.allowedProvinces || [],
       displayName: newUser.name,
-      email: newUser.email
+      email: newUser.email,
+      password: newUser.password
     })
     
     // Clear cache so new user appears immediately

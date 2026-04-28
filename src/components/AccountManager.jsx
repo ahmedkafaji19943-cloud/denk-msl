@@ -13,6 +13,8 @@ export default function AccountManager({ config, onAccountAdded }) {
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
+    password: '',
+    passwordConfirm: '',
     allowedTabs: ['mslReport', 'mrReport'],
     allowedProvinces: [],
     isReportsOnly: false
@@ -136,15 +138,29 @@ export default function AccountManager({ config, onAccountAdded }) {
       alert('Please enter email address')
       return
     }
+    if (!newUser.password.trim()) {
+      alert('Please enter a password')
+      return
+    }
+    if (newUser.password.length < 6) {
+      alert('Password must be at least 6 characters')
+      return
+    }
+    if (newUser.password !== newUser.passwordConfirm) {
+      alert('Passwords do not match')
+      return
+    }
     
     setSaving(true)
     try {
       const createdUser = await createNewMslUser(newUser)
-      alert(`New user "${newUser.name}" created successfully!`)
+      alert(`New user "${newUser.name}" created successfully!\n\nEmail: ${newUser.email}\nPassword has been set.`)
       setShowCreateForm(false)
       setNewUser({
         name: '',
         email: '',
+        password: '',
+        passwordConfirm: '',
         allowedTabs: ['mslReport', 'mrReport'],
         allowedProvinces: [],
         isReportsOnly: false
@@ -207,6 +223,24 @@ export default function AccountManager({ config, onAccountAdded }) {
                 placeholder="e.g., user@denk.local"
                 value={newUser.email}
                 onChange={e => setNewUser({...newUser, email: e.target.value})}
+                style={{width: '100%', marginBottom: '10px'}}
+              />
+
+              <label>Password</label>
+              <input 
+                type="password"
+                placeholder="Minimum 6 characters"
+                value={newUser.password}
+                onChange={e => setNewUser({...newUser, password: e.target.value})}
+                style={{width: '100%', marginBottom: '10px'}}
+              />
+
+              <label>Confirm Password</label>
+              <input 
+                type="password"
+                placeholder="Re-enter password"
+                value={newUser.passwordConfirm}
+                onChange={e => setNewUser({...newUser, passwordConfirm: e.target.value})}
                 style={{width: '100%', marginBottom: '10px'}}
               />
 
