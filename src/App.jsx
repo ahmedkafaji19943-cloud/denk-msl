@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { auth } from './firebase'
-import { initializeSharedData, getSharedConfig, getUserSettings } from './firestoreStorage'
+import { initializeSharedData, getSharedConfig, getUserSettings, ensureUserSettings } from './firestoreStorage'
 import FirebaseLogin from './components/FirebaseLogin'
 import LogCall from './components/LogCall'
 import MessagesEdit from './components/MessagesEdit'
@@ -40,8 +40,8 @@ export default function App() {
         }
         if (msl) {
           setMslInfo(msl)
-          // Load user settings
-          const settings = await getUserSettings(msl.id)
+          // Load or create user settings
+          const settings = await ensureUserSettings(msl)
           setUserSettings(settings)
           // If this is a reports-only user, set tab to mslreport
           if (msl.reportsOnly) {

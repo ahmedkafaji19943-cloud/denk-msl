@@ -516,6 +516,35 @@ export async function getAllProvinces() {
   }
 }
 
+// Ensure default settings exist for a user (especially reports-only users)
+export async function ensureUserSettings(msl) {
+  try {
+    const ref = doc(db, 'userSettings', msl.id)
+    const snap = await getDoc(ref)
+    
+    // If settings already exist, return them
+    if (snap.exists()) {
+      return snap.data()
+    }
+    
+    // Create default settings for this user
+    const defaultSettings = {
+      mslId: msl.id,
+      uid: msl.uid || msl.id,
+      displayName: msl.name,
+      allowedTabs: msl.reportsOnly ? ['mslReport', 'mrReport'] : ['logCall', 'plan', 'messages', 'products', 'medReps', 'mslReport', 'mrReport'],
+      allowedProvinces: msl.reportsOnly ? ['Mosul'] : [],  // Reports-only users see only Mosul by default
+      createdAt: serverTimestamp()
+    }
+    
+    await setDoc(ref, defaultSettings)
+    return defaultSettings
+  } catch (err) {
+    console.error('Error ensuring user settings:', err)
+    return null
+  }
+}
+
 // Create new MSL user
 export async function createNewMslUser(newUser) {
   try {
