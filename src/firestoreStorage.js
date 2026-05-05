@@ -20,7 +20,8 @@ const MSL_DATA = {
     { id: 'msl2', name: 'Ahmed AbdulKareem', email: 'ahmed@denk.local', manager: true },
     { id: 'msl3', name: 'Ahmed Rabah', email: 'rabah@denk.local' },
     { id: 'msl4', name: 'Ali Kamil', email: 'ali@denk.local' },
-    { id: 'msl5', name: 'Obaidi', email: 'obaidi@denk.local', uid: 'CBtwsJOTekNbqs08XFiKESZnu3y1', reportsOnly: true }
+    { id: 'msl5', name: 'Obaidi', email: 'obaidi@denk.local', uid: 'CBtwsJOTekNbqs08XFiKESZnu3y1', reportsOnly: true },
+    { id: 'msl6', name: 'Haitham', email: 'haitham90@denk.local', uid: 'IiorJDRbaPWNN0qoC3ZVIh70ZSb2', reportsOnly: true }
   ],
   medReps: [
     { name: 'Yaman Ali', province: 'Baghdad', zone: 'North', line: '' },
