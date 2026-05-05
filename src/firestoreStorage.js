@@ -11,7 +11,8 @@ import {
   serverTimestamp,
   deleteDoc
 } from 'firebase/firestore'
-import { db } from './firebase'
+import { createUserWithEmailAndPassword } from 'firebase/auth'
+import { db, auth } from './firebase'
 
 const MSL_DATA = {
   msls: [
@@ -517,7 +518,11 @@ export async function getAllProvinces() {
 // Create new MSL user
 export async function createNewMslUser(newUser) {
   try {
-    // newUser should have: name, email, allowedTabs, allowedProvinces, isReportsOnly
+    // newUser should have: name, email, allowedTabs, allowedProvinces, isReportsOnly, password
+    
+    // Step 1: Create Firebase Authentication account
+    const authResult = await createUserWithEmailAndPassword(auth, newUser.email, newUser.password)
+    const uid = authResult.user.uid
     
     // Generate next MSL ID
     const cfg = await getSharedConfig()
@@ -528,7 +533,7 @@ export async function createNewMslUser(newUser) {
     const nextId = Math.max(...existingIds, 0) + 1
     const mslId = `msl${nextId}`
     
-    // Update config with new MSL
+    // Step 2: Update config with new MSL
     const configRef = doc(db, 'config', 'app')
     const snap = await getDoc(configRef)
     if (!snap.exists()) {
@@ -540,26 +545,29 @@ export async function createNewMslUser(newUser) {
       id: mslId,
       name: newUser.name,
       email: newUser.email,
+      uid: uid,
       reportsOnly: newUser.isReportsOnly || false
     }
     
     data.msls = [...(data.msls || []), newMslEntry]
     await setDoc(configRef, { ...data, updatedAt: serverTimestamp() })
     
-    // Save user settings
+    // Step 3: Save user settings
     await saveUserSettings(mslId, {
       mslId,
+      uid: uid,
       allowedTabs: newUser.allowedTabs || ['mslReport', 'mrReport'],
       allowedProvinces: newUser.allowedProvinces || [],
       displayName: newUser.name,
       email: newUser.email,
-      password: newUser.password
+      recoveryEmail: newUser.recoveryEmail || 'ahmedkafaji1994@gmail.com',
+      createdAt: serverTimestamp()
     })
     
     // Clear cache so new user appears immediately
     configCache = null
     
-    return { id: mslId, ...newMslEntry }
+    return { id: mslId, uid: uid, ...newMslEntry }
   } catch (err) {
     console.error('Error creating new MSL user:', err)
     throw err
