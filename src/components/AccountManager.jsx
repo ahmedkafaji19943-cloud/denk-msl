@@ -159,7 +159,9 @@ export default function AccountManager({ config, onAccountAdded }) {
     
     setSaving(true)
     try {
+      console.log('Creating new user:', newUser.email)
       const createdUser = await createNewMslUser(newUser)
+      console.log('User created successfully:', createdUser)
       alert(`New user "${newUser.name}" created successfully!\n\nEmail: ${newUser.email}\nPassword has been set.`)
       setShowCreateForm(false)
       setNewUser({
@@ -174,7 +176,8 @@ export default function AccountManager({ config, onAccountAdded }) {
       // Reload accounts
       setTimeout(() => onAccountAdded?.(), 100)
     } catch (err) {
-      alert('Error: ' + err.message)
+      console.error('Full error creating user:', err)
+      alert('Error creating user:\n\n' + err.message)
     } finally {
       setSaving(false)
     }
