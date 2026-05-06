@@ -92,14 +92,26 @@ export default function AccountManager({ config, onAccountAdded }) {
   }
 
   async function handleSaveSettings() {
-    if (!settings) return
+    if (!settings || !selectedMsl) return
     setSaving(true)
     try {
+      // Save to Firestore
       await saveUserSettings(settings.mslId, settings)
-      alert('Settings saved successfully!')
+      
+      // Reload the settings to confirm they were saved
+      const reloadedSettings = await getUserSettings(selectedMsl.id)
+      if (reloadedSettings) {
+        setSettings(reloadedSettings)
+        console.log('Settings saved and reloaded successfully for', selectedMsl.name, reloadedSettings)
+      } else {
+        console.warn('Settings saved but reload returned empty for', selectedMsl.name)
+      }
+      
+      alert(`✅ Settings saved for ${selectedMsl.name}!\n\nTabs: ${(settings.allowedTabs || []).length}\nProvinces: ${(settings.allowedProvinces || []).length}`)
       setEditMode(false)
     } catch (err) {
-      alert('Error: ' + err.message)
+      console.error('Error saving settings:', err)
+      alert('❌ Error saving settings: ' + err.message)
     } finally {
       setSaving(false)
     }
@@ -436,7 +448,18 @@ export default function AccountManager({ config, onAccountAdded }) {
                     disabled={saving}
                     style={{flex: 1, padding: '10px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600}}
                   >
-                    {saving ? 'Saving...' : 'Save Settings'}
+                    {saving ? 'Saving...' : '💾 Save Settings'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditMode(false)
+                      // Reload original settings
+                      selectMsl(selectedMsl)
+                    }}
+                    disabled={saving}
+                    style={{flex: 1, padding: '10px', background: '#9ca3af', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600}}
+                  >
+                    Cancel
                   </button>
                 </div>
               </>
@@ -473,6 +496,15 @@ export default function AccountManager({ config, onAccountAdded }) {
                       <span className="muted">No provinces allowed</span>
                     )}
                   </div>
+                </div>
+
+                <div style={{marginTop: '20px', display: 'flex', gap: '8px'}}>
+                  <button
+                    onClick={() => setEditMode(true)}
+                    style={{flex: 1, padding: '10px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600}}
+                  >
+                    ✏️ Edit Settings
+                  </button>
                 </div>
               </>
             )}
