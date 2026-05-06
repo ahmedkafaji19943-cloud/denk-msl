@@ -478,16 +478,30 @@ export async function saveUserSettings(mslId, settings) {
   try {
     console.log(`[saveUserSettings] Saving settings for MSL: ${mslId}`, settings)
     
-    // Ensure proper data structure
-    const dataToSave = {
-      mslId,
-      uid: settings.uid,
-      displayName: settings.displayName || settings.name,
-      allowedTabs: Array.isArray(settings.allowedTabs) ? settings.allowedTabs : [],
-      allowedProvinces: Array.isArray(settings.allowedProvinces) ? settings.allowedProvinces : [],
-      ...settings,
-      updatedAt: serverTimestamp()
+    // Ensure proper data structure - filter out undefined values
+    const dataToSave = {}
+    dataToSave.mslId = mslId
+    dataToSave.displayName = settings.displayName || settings.name || mslId
+    dataToSave.allowedTabs = Array.isArray(settings.allowedTabs) ? settings.allowedTabs : []
+    dataToSave.allowedProvinces = Array.isArray(settings.allowedProvinces) ? settings.allowedProvinces : []
+    
+    // Only add uid if it's defined
+    if (settings.uid) {
+      dataToSave.uid = settings.uid
     }
+    
+    // Copy any other fields from settings (password, email, etc.)
+    Object.keys(settings).forEach(key => {
+      if (!['mslId', 'displayName', 'allowedTabs', 'allowedProvinces', 'uid'].includes(key)) {
+        const value = settings[key]
+        // Only include non-undefined values
+        if (value !== undefined) {
+          dataToSave[key] = value
+        }
+      }
+    })
+    
+    dataToSave.updatedAt = serverTimestamp()
     
     console.log(`[saveUserSettings] Final data being saved:`, dataToSave)
     const ref = doc(db, 'userSettings', mslId)

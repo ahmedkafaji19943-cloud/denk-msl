@@ -49,6 +49,7 @@ export default function AccountManager({ config, onAccountAdded }) {
       const userSettings = await getUserSettings(msl.id)
       setSettings(userSettings || {
         mslId: msl.id,
+        uid: msl.uid,
         allowedTabs: ['mslReport', 'mrReport'],
         allowedProvinces: allProvinces,
         displayName: msl.name,
