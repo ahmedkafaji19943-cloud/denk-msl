@@ -2,6 +2,7 @@ import {
   collection,
   doc,
   getDoc,
+  getDocFromServer,
   setDoc,
   getDocs,
   query,
@@ -461,23 +462,23 @@ export async function wasMessageUsedWithMedRep(medRep, productId, message, mslId
 
 // Account Management Functions
 
-// Get user settings (permissions, provinces, etc.)
+// Get user settings - always reads from server to avoid stale cache
 export async function getUserSettings(mslId) {
   try {
-    console.log(`[getUserSettings] Loading settings for MSL ID: "${mslId}"`)
+    console.log(`[getUserSettings] Loading settings from SERVER for MSL ID: "${mslId}"`)
     const ref = doc(db, 'userSettings', mslId)
-    const snap = await getDoc(ref)
+    const snap = await getDocFromServer(ref)
     
     if (snap.exists()) {
       const data = snap.data()
-      console.log(`[getUserSettings] ✅ Found settings for MSL ID "${mslId}":`, data)
+      console.log(`[getUserSettings] ✅ Found settings for MSL ID "${mslId}":`, JSON.stringify(data))
       return data
     } else {
-      console.log(`[getUserSettings] ℹ️ No settings found for MSL ID "${mslId}" (document doesn't exist)`)
+      console.log(`[getUserSettings] ℹ️ No settings document for MSL ID "${mslId}"`)
       return null
     }
   } catch (err) {
-    console.error(`[getUserSettings] Error fetching user settings for ${mslId}:`, err)
+    console.error(`[getUserSettings] Error:`, err)
     return null
   }
 }
@@ -485,39 +486,26 @@ export async function getUserSettings(mslId) {
 // Save/update user settings
 export async function saveUserSettings(mslId, settings) {
   try {
-    console.log(`[saveUserSettings] Saving settings for MSL: ${mslId}`, settings)
-    
-    // Ensure proper data structure - filter out undefined values
-    const dataToSave = {}
-    dataToSave.mslId = mslId
-    dataToSave.displayName = settings.displayName || settings.name || mslId
-    dataToSave.allowedTabs = Array.isArray(settings.allowedTabs) ? settings.allowedTabs : []
-    dataToSave.allowedProvinces = Array.isArray(settings.allowedProvinces) ? settings.allowedProvinces : []
-    
-    // Only add uid if it's defined
-    if (settings.uid) {
-      dataToSave.uid = settings.uid
+    // Build a clean object with only defined values
+    const dataToSave = {
+      mslId: mslId,
+      displayName: settings.displayName || settings.name || mslId,
+      allowedTabs: Array.isArray(settings.allowedTabs) ? settings.allowedTabs : [],
+      allowedProvinces: Array.isArray(settings.allowedProvinces) ? settings.allowedProvinces : [],
+      updatedAt: serverTimestamp()
     }
-    
-    // Copy any other fields from settings (password, email, etc.)
-    Object.keys(settings).forEach(key => {
-      if (!['mslId', 'displayName', 'allowedTabs', 'allowedProvinces', 'uid'].includes(key)) {
-        const value = settings[key]
-        // Only include non-undefined values
-        if (value !== undefined) {
-          dataToSave[key] = value
-        }
-      }
-    })
-    
-    dataToSave.updatedAt = serverTimestamp()
-    
-    console.log(`[saveUserSettings] Final data being saved:`, dataToSave)
+    // Add optional fields only if they have values
+    if (settings.uid) dataToSave.uid = settings.uid
+    if (settings.email) dataToSave.email = settings.email
+    if (settings.password) dataToSave.password = settings.password
+    if (settings.recoveryEmail) dataToSave.recoveryEmail = settings.recoveryEmail
+
+    console.log(`[saveUserSettings] Saving to userSettings/${mslId}:`, JSON.stringify(dataToSave))
     const ref = doc(db, 'userSettings', mslId)
     await setDoc(ref, dataToSave)
-    console.log(`[saveUserSettings] Successfully saved settings for ${mslId}`)
+    console.log(`[saveUserSettings] ✅ Saved successfully to userSettings/${mslId}`)
   } catch (err) {
-    console.error('Error saving user settings:', err)
+    console.error('[saveUserSettings] Error:', err)
     throw err
   }
 }
@@ -550,47 +538,48 @@ export async function getAllProvinces() {
   }
 }
 
-// Ensure default settings exist for a user (especially reports-only users)
+// Ensure default settings exist for a user. Always reads from server to avoid stale cache.
 export async function ensureUserSettings(msl) {
   try {
-    console.log(`[ensureUserSettings] Loading settings for MSL: ${msl.id} (${msl.name})`)
+    console.log(`[ensureUserSettings] Reading from SERVER for ${msl.id} (${msl.name})`)
     const ref = doc(db, 'userSettings', msl.id)
-    const snap = await getDoc(ref)
+    const snap = await getDocFromServer(ref)
     
-    // If settings already exist, return them
     if (snap.exists()) {
       const data = snap.data()
-      console.log(`[ensureUserSettings] Found existing settings for ${msl.name}:`, data)
-      
-      // Validate and normalize the data structure
-      const normalizedSettings = {
-        mslId: data.mslId || msl.id,
-        uid: data.uid || msl.uid || msl.id,
-        displayName: data.displayName || msl.name,
-        allowedTabs: Array.isArray(data.allowedTabs) ? data.allowedTabs : ['mslReport', 'mrReport'],
-        allowedProvinces: Array.isArray(data.allowedProvinces) ? data.allowedProvinces : [],
-        ...data
+      console.log(`[ensureUserSettings] ✅ Loaded settings for ${msl.name}:`, JSON.stringify(data))
+      // Return clean object with guaranteed array types
+      return {
+        ...data,
+        mslId: msl.id,
+        allowedTabs: Array.isArray(data.allowedTabs) ? data.allowedTabs : ['logCall', 'plan', 'messages', 'products', 'medReps', 'mslReport', 'mrReport'],
+        allowedProvinces: Array.isArray(data.allowedProvinces) ? data.allowedProvinces : []
       }
-      console.log(`[ensureUserSettings] Normalized settings:`, normalizedSettings)
-      return normalizedSettings
     }
     
-    // Create default settings for this user
+    // No document — create defaults
     const defaultSettings = {
       mslId: msl.id,
-      uid: msl.uid || msl.id,
       displayName: msl.name,
-      allowedTabs: msl.reportsOnly ? ['mslReport', 'mrReport'] : ['logCall', 'plan', 'messages', 'products', 'medReps', 'mslReport', 'mrReport'],
-      allowedProvinces: msl.reportsOnly ? ['Mosul'] : [],  // Reports-only users see only Mosul by default
-      createdAt: serverTimestamp()
+      allowedTabs: msl.reportsOnly
+        ? ['mslReport', 'mrReport']
+        : ['logCall', 'plan', 'messages', 'products', 'medReps', 'mslReport', 'mrReport'],
+      allowedProvinces: []
     }
+    if (msl.uid) defaultSettings.uid = msl.uid
+    if (msl.email) defaultSettings.email = msl.email
     
-    console.log(`[ensureUserSettings] Creating new default settings for ${msl.name}:`, defaultSettings)
-    await setDoc(ref, defaultSettings)
+    console.log(`[ensureUserSettings] Creating defaults for ${msl.name}:`, JSON.stringify(defaultSettings))
+    await setDoc(ref, { ...defaultSettings, createdAt: serverTimestamp() })
     return defaultSettings
   } catch (err) {
-    console.error('Error ensuring user settings:', err)
-    return null
+    console.error('[ensureUserSettings] Error:', err)
+    // Fallback: return permissive defaults so user can still log in
+    return {
+      mslId: msl.id,
+      allowedTabs: ['logCall', 'plan', 'messages', 'products', 'medReps', 'mslReport', 'mrReport'],
+      allowedProvinces: []
+    }
   }
 }
 

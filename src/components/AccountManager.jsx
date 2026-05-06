@@ -96,32 +96,36 @@ export default function AccountManager({ config, onAccountAdded }) {
     if (!settings || !selectedMsl) return
     setSaving(true)
     try {
-      console.log(`[handleSaveSettings] Saving for MSL ID: "${settings.mslId}"`)
-      console.log(`[handleSaveSettings] MSL Name: ${selectedMsl.name}`)
-      console.log(`[handleSaveSettings] Data to save:`, settings)
-      
-      // Save to Firestore
-      await saveUserSettings(settings.mslId, settings)
-      
-      // Wait a moment for Firestore to sync
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      // Reload the settings to confirm they were saved
-      console.log(`[handleSaveSettings] Reloading settings from Firestore for MSL ID: "${selectedMsl.id}"`)
-      const reloadedSettings = await getUserSettings(selectedMsl.id)
-      
-      if (reloadedSettings) {
-        setSettings(reloadedSettings)
-        console.log(`✅ [handleSaveSettings] Settings saved and reloaded for ${selectedMsl.name}:`, reloadedSettings)
-        alert(`✅ Settings saved for ${selectedMsl.name}!\n\nTabs: ${(reloadedSettings.allowedTabs || []).length}\nProvinces: ${(reloadedSettings.allowedProvinces || []).length}`)
-      } else {
-        console.warn(`⚠️ [handleSaveSettings] Settings saved but reload returned EMPTY for ${selectedMsl.name}`)
-        alert(`⚠️ Settings saved, but verification reload returned empty!\n\nPlease check Firestore: userSettings/${selectedMsl.id}`)
+      // Always use selectedMsl.id as the authoritative document ID
+      const mslId = selectedMsl.id
+      const dataToSave = {
+        allowedTabs: settings.allowedTabs || [],
+        allowedProvinces: settings.allowedProvinces || [],
+        displayName: selectedMsl.name,
+        email: selectedMsl.email
       }
-      
+      if (selectedMsl.uid) dataToSave.uid = selectedMsl.uid
+      // Preserve password/recoveryEmail if they exist in settings
+      if (settings.password) dataToSave.password = settings.password
+      if (settings.recoveryEmail) dataToSave.recoveryEmail = settings.recoveryEmail
+
+      console.log(`[handleSaveSettings] Saving to userSettings/${mslId}:`, JSON.stringify(dataToSave))
+      await saveUserSettings(mslId, dataToSave)
+
+      // Reload from server to confirm
+      await new Promise(resolve => setTimeout(resolve, 300))
+      const reloaded = await getUserSettings(mslId)
+      console.log(`[handleSaveSettings] Reloaded after save:`, JSON.stringify(reloaded))
+
+      if (reloaded) {
+        setSettings(reloaded)
+        alert(`✅ Settings saved for ${selectedMsl.name}!\nTabs: ${(reloaded.allowedTabs || []).join(', ') || 'none'}\nProvinces: ${(reloaded.allowedProvinces || []).join(', ') || 'all'}`)
+      } else {
+        alert(`⚠️ Save may have failed - could not verify. Check console.`)
+      }
       setEditMode(false)
     } catch (err) {
-      console.error('Error saving settings:', err)
+      console.error('[handleSaveSettings] Error:', err)
       alert('❌ Error saving settings: ' + err.message)
     } finally {
       setSaving(false)
