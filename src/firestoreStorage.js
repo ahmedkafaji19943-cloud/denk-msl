@@ -476,12 +476,23 @@ export async function getUserSettings(mslId) {
 // Save/update user settings
 export async function saveUserSettings(mslId, settings) {
   try {
-    const ref = doc(db, 'userSettings', mslId)
-    await setDoc(ref, {
+    console.log(`[saveUserSettings] Saving settings for MSL: ${mslId}`, settings)
+    
+    // Ensure proper data structure
+    const dataToSave = {
       mslId,
+      uid: settings.uid,
+      displayName: settings.displayName || settings.name,
+      allowedTabs: Array.isArray(settings.allowedTabs) ? settings.allowedTabs : [],
+      allowedProvinces: Array.isArray(settings.allowedProvinces) ? settings.allowedProvinces : [],
       ...settings,
       updatedAt: serverTimestamp()
-    })
+    }
+    
+    console.log(`[saveUserSettings] Final data being saved:`, dataToSave)
+    const ref = doc(db, 'userSettings', mslId)
+    await setDoc(ref, dataToSave)
+    console.log(`[saveUserSettings] Successfully saved settings for ${mslId}`)
   } catch (err) {
     console.error('Error saving user settings:', err)
     throw err
@@ -519,12 +530,26 @@ export async function getAllProvinces() {
 // Ensure default settings exist for a user (especially reports-only users)
 export async function ensureUserSettings(msl) {
   try {
+    console.log(`[ensureUserSettings] Loading settings for MSL: ${msl.id} (${msl.name})`)
     const ref = doc(db, 'userSettings', msl.id)
     const snap = await getDoc(ref)
     
     // If settings already exist, return them
     if (snap.exists()) {
-      return snap.data()
+      const data = snap.data()
+      console.log(`[ensureUserSettings] Found existing settings for ${msl.name}:`, data)
+      
+      // Validate and normalize the data structure
+      const normalizedSettings = {
+        mslId: data.mslId || msl.id,
+        uid: data.uid || msl.uid || msl.id,
+        displayName: data.displayName || msl.name,
+        allowedTabs: Array.isArray(data.allowedTabs) ? data.allowedTabs : ['mslReport', 'mrReport'],
+        allowedProvinces: Array.isArray(data.allowedProvinces) ? data.allowedProvinces : [],
+        ...data
+      }
+      console.log(`[ensureUserSettings] Normalized settings:`, normalizedSettings)
+      return normalizedSettings
     }
     
     // Create default settings for this user
@@ -537,6 +562,7 @@ export async function ensureUserSettings(msl) {
       createdAt: serverTimestamp()
     }
     
+    console.log(`[ensureUserSettings] Creating new default settings for ${msl.name}:`, defaultSettings)
     await setDoc(ref, defaultSettings)
     return defaultSettings
   } catch (err) {
