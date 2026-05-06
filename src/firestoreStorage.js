@@ -70,7 +70,7 @@ export async function initializeSharedData() {
 // Get shared config (MSLs, med reps, products) - with caching
 let configCache = null
 let cacheTime = 0
-const CACHE_DURATION = 30000 // Cache for 30 seconds
+const CACHE_DURATION = 5000 // Cache for only 5 seconds to ensure fresh data on login
 
 export async function getSharedConfig(bypassCache = false) {
   try {

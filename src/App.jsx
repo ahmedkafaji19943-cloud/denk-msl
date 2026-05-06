@@ -29,7 +29,8 @@ export default function App() {
     
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const cfg = await getSharedConfig()
+        // Bypass cache on login to ensure fresh config
+        const cfg = await getSharedConfig(true)
         setConfig(cfg)
         
         // Find MSL details by email or UID
