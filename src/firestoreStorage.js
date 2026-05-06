@@ -464,11 +464,20 @@ export async function wasMessageUsedWithMedRep(medRep, productId, message, mslId
 // Get user settings (permissions, provinces, etc.)
 export async function getUserSettings(mslId) {
   try {
+    console.log(`[getUserSettings] Loading settings for MSL ID: "${mslId}"`)
     const ref = doc(db, 'userSettings', mslId)
     const snap = await getDoc(ref)
-    return snap.exists() ? snap.data() : null
+    
+    if (snap.exists()) {
+      const data = snap.data()
+      console.log(`[getUserSettings] ✅ Found settings for MSL ID "${mslId}":`, data)
+      return data
+    } else {
+      console.log(`[getUserSettings] ℹ️ No settings found for MSL ID "${mslId}" (document doesn't exist)`)
+      return null
+    }
   } catch (err) {
-    console.error('Error fetching user settings:', err)
+    console.error(`[getUserSettings] Error fetching user settings for ${mslId}:`, err)
     return null
   }
 }
@@ -657,6 +666,28 @@ export async function createNewMslUser(newUser) {
     console.error('Error creating new MSL user:', err)
     throw err
   }
+}
+
+// Debug function - export for console access
+export async function debugCheckUserSettings(mslId) {
+  console.log(`\n========== DEBUG: Checking settings for MSL ID "${mslId}" ==========`)
+  try {
+    const ref = doc(db, 'userSettings', mslId)
+    const snap = await getDoc(ref)
+    
+    if (snap.exists()) {
+      const data = snap.data()
+      console.log(`✅ Found document userSettings/${mslId}:`)
+      console.log(data)
+      console.log(`   - allowedTabs: ${Array.isArray(data.allowedTabs) ? data.allowedTabs.join(', ') : 'NOT AN ARRAY'}`)
+      console.log(`   - allowedProvinces: ${Array.isArray(data.allowedProvinces) ? data.allowedProvinces.join(', ') : 'NOT AN ARRAY'}`)
+    } else {
+      console.log(`❌ No document found at userSettings/${mslId}`)
+    }
+  } catch (err) {
+    console.error('Error checking settings:', err)
+  }
+  console.log('==========\n')
 }
 
 

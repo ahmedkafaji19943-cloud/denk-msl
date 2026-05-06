@@ -96,19 +96,29 @@ export default function AccountManager({ config, onAccountAdded }) {
     if (!settings || !selectedMsl) return
     setSaving(true)
     try {
+      console.log(`[handleSaveSettings] Saving for MSL ID: "${settings.mslId}"`)
+      console.log(`[handleSaveSettings] MSL Name: ${selectedMsl.name}`)
+      console.log(`[handleSaveSettings] Data to save:`, settings)
+      
       // Save to Firestore
       await saveUserSettings(settings.mslId, settings)
       
+      // Wait a moment for Firestore to sync
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
       // Reload the settings to confirm they were saved
+      console.log(`[handleSaveSettings] Reloading settings from Firestore for MSL ID: "${selectedMsl.id}"`)
       const reloadedSettings = await getUserSettings(selectedMsl.id)
+      
       if (reloadedSettings) {
         setSettings(reloadedSettings)
-        console.log('Settings saved and reloaded successfully for', selectedMsl.name, reloadedSettings)
+        console.log(`✅ [handleSaveSettings] Settings saved and reloaded for ${selectedMsl.name}:`, reloadedSettings)
+        alert(`✅ Settings saved for ${selectedMsl.name}!\n\nTabs: ${(reloadedSettings.allowedTabs || []).length}\nProvinces: ${(reloadedSettings.allowedProvinces || []).length}`)
       } else {
-        console.warn('Settings saved but reload returned empty for', selectedMsl.name)
+        console.warn(`⚠️ [handleSaveSettings] Settings saved but reload returned EMPTY for ${selectedMsl.name}`)
+        alert(`⚠️ Settings saved, but verification reload returned empty!\n\nPlease check Firestore: userSettings/${selectedMsl.id}`)
       }
       
-      alert(`✅ Settings saved for ${selectedMsl.name}!\n\nTabs: ${(settings.allowedTabs || []).length}\nProvinces: ${(settings.allowedProvinces || []).length}`)
       setEditMode(false)
     } catch (err) {
       console.error('Error saving settings:', err)

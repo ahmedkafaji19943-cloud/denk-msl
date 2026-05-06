@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { auth } from './firebase'
-import { initializeSharedData, getSharedConfig, getUserSettings, ensureUserSettings } from './firestoreStorage'
+import { initializeSharedData, getSharedConfig, getUserSettings, ensureUserSettings, debugCheckUserSettings } from './firestoreStorage'
 import FirebaseLogin from './components/FirebaseLogin'
 import LogCall from './components/LogCall'
 import MessagesEdit from './components/MessagesEdit'
@@ -56,6 +56,12 @@ export default function App() {
     })
 
     return unsubscribe
+  }, [])
+
+  // Expose debug function to window for console access
+  useEffect(() => {
+    window.debugCheckUserSettings = debugCheckUserSettings
+    console.log('🔧 Debug function available: call debugCheckUserSettings("mslId") from console')
   }, [])
 
   function handleLogout() {
