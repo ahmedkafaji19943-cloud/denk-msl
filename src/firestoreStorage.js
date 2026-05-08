@@ -2,7 +2,6 @@ import {
   collection,
   doc,
   getDoc,
-  getDocFromServer,
   setDoc,
   getDocs,
   query,
@@ -462,23 +461,20 @@ export async function wasMessageUsedWithMedRep(medRep, productId, message, mslId
 
 // Account Management Functions
 
-// Get user settings - always reads from server to avoid stale cache
+// Get user settings - reads fresh from server (persistence is disabled globally)
 export async function getUserSettings(mslId) {
   try {
-    console.log(`[getUserSettings] Loading settings from SERVER for MSL ID: "${mslId}"`)
     const ref = doc(db, 'userSettings', mslId)
-    const snap = await getDocFromServer(ref)
-    
+    const snap = await getDoc(ref)
     if (snap.exists()) {
       const data = snap.data()
-      console.log(`[getUserSettings] ✅ Found settings for MSL ID "${mslId}":`, JSON.stringify(data))
+      console.log(`[getUserSettings] Loaded userSettings/${mslId}:`, JSON.stringify({ allowedTabs: data.allowedTabs, allowedProvinces: data.allowedProvinces }))
       return data
-    } else {
-      console.log(`[getUserSettings] ℹ️ No settings document for MSL ID "${mslId}"`)
-      return null
     }
+    console.log(`[getUserSettings] No document at userSettings/${mslId}`)
+    return null
   } catch (err) {
-    console.error(`[getUserSettings] Error:`, err)
+    console.error(`[getUserSettings] ERROR reading userSettings/${mslId}:`, err.code, err.message)
     return null
   }
 }
@@ -538,26 +534,24 @@ export async function getAllProvinces() {
   }
 }
 
-// Ensure default settings exist for a user. Always reads from server to avoid stale cache.
+// Ensure default settings exist. Reads fresh (persistence disabled) so no stale cache.
 export async function ensureUserSettings(msl) {
   try {
-    console.log(`[ensureUserSettings] Reading from SERVER for ${msl.id} (${msl.name})`)
     const ref = doc(db, 'userSettings', msl.id)
-    const snap = await getDocFromServer(ref)
-    
+    const snap = await getDoc(ref)
+
     if (snap.exists()) {
       const data = snap.data()
-      console.log(`[ensureUserSettings] ✅ Loaded settings for ${msl.name}:`, JSON.stringify(data))
-      // Return clean object with guaranteed array types
+      console.log(`[ensureUserSettings] Loaded settings for ${msl.name} (${msl.id}):`, JSON.stringify({ allowedTabs: data.allowedTabs, allowedProvinces: data.allowedProvinces }))
       return {
         ...data,
         mslId: msl.id,
-        allowedTabs: Array.isArray(data.allowedTabs) ? data.allowedTabs : ['logCall', 'plan', 'messages', 'products', 'medReps', 'mslReport', 'mrReport'],
+        allowedTabs: Array.isArray(data.allowedTabs) ? data.allowedTabs : [],
         allowedProvinces: Array.isArray(data.allowedProvinces) ? data.allowedProvinces : []
       }
     }
-    
-    // No document — create defaults
+
+    // No document yet — create defaults
     const defaultSettings = {
       mslId: msl.id,
       displayName: msl.name,
@@ -568,18 +562,14 @@ export async function ensureUserSettings(msl) {
     }
     if (msl.uid) defaultSettings.uid = msl.uid
     if (msl.email) defaultSettings.email = msl.email
-    
+
     console.log(`[ensureUserSettings] Creating defaults for ${msl.name}:`, JSON.stringify(defaultSettings))
     await setDoc(ref, { ...defaultSettings, createdAt: serverTimestamp() })
     return defaultSettings
   } catch (err) {
-    console.error('[ensureUserSettings] Error:', err)
-    // Fallback: return permissive defaults so user can still log in
-    return {
-      mslId: msl.id,
-      allowedTabs: ['logCall', 'plan', 'messages', 'products', 'medReps', 'mslReport', 'mrReport'],
-      allowedProvinces: []
-    }
+    // Do NOT silently return permissive defaults — propagate the error so it's visible
+    console.error(`[ensureUserSettings] FATAL ERROR for ${msl.id}:`, err.code, err.message)
+    throw err
   }
 }
 

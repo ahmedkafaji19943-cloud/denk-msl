@@ -41,11 +41,15 @@ export default function App() {
         }
         if (msl) {
           setMslInfo(msl)
-          // Load or create user settings
-          const settings = await ensureUserSettings(msl)
-          console.log(`[App.onAuthStateChanged] Settings loaded for ${msl.name}:`, settings)
-          setUserSettings(settings)
-          // If this is a reports-only user, set tab to mslreport
+          try {
+            const settings = await ensureUserSettings(msl)
+            console.log(`[App] Settings loaded for ${msl.name}:`, JSON.stringify({ allowedTabs: settings?.allowedTabs, allowedProvinces: settings?.allowedProvinces }))
+            setUserSettings(settings)
+          } catch (settingsErr) {
+            console.error(`[App] Failed to load settings for ${msl.name}:`, settingsErr.code, settingsErr.message)
+            // Keep userSettings null — canViewTab will block all tabs on null
+            setUserSettings(null)
+          }
           if (msl.reportsOnly) {
             setTab('mslreport')
           }
@@ -72,14 +76,9 @@ export default function App() {
   }
 
   function canViewTab(tabId) {
-    // If no user settings exist, allow all tabs for backward compatibility
-    if (!userSettings || !userSettings.allowedTabs) {
-      console.warn(`[canViewTab] No user settings for tab ${tabId} - defaulting to show all tabs (userSettings:`, userSettings, ')')
-      return true
-    }
-    const allowed = userSettings.allowedTabs.includes(tabId)
-    console.log(`[canViewTab] ${tabId}: ${allowed ? 'ALLOWED' : 'BLOCKED'} (allowed tabs: ${userSettings.allowedTabs.join(', ')})`)
-    return allowed
+    if (!userSettings) return false  // settings not loaded — block everything
+    if (!userSettings.allowedTabs || userSettings.allowedTabs.length === 0) return false
+    return userSettings.allowedTabs.includes(tabId)
   }
 
   async function reloadConfig() {

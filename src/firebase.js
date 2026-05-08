@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import { initializeFirestore, memoryLocalCache } from 'firebase/firestore'
 
 const firebaseConfig = {
   apiKey: "AIzaSyDmvirapiN3eKvVwybexmTEejuYNqz74GY",
@@ -14,4 +14,5 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig)
 export const auth = getAuth(app)
-export const db = getFirestore(app)
+// Use memory-only cache (no IndexedDB persistence) so all reads are always fresh from server
+export const db = initializeFirestore(app, { localCache: memoryLocalCache() })
