@@ -88,8 +88,12 @@ export default function MRReports({ config, allowedProvinces }) {
   const filteredCalls = useMemo(() => {
     return calls
       .filter(call => {
+        const medRepProvince = medRepToProvince[call.medRep]
+        // Always enforce allowedProvinces restriction (even when provinceFilter is 'all')
+        if (allowedProvinces && allowedProvinces.length > 0) {
+          if (!allowedProvinces.includes(medRepProvince)) return false
+        }
         if (provinceFilter !== 'all') {
-          const medRepProvince = medRepToProvince[call.medRep]
           if (medRepProvince !== provinceFilter) return false
         }
         if (medRepFilter !== 'all' && call.medRep !== medRepFilter) return false

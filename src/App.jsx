@@ -138,17 +138,13 @@ export default function App() {
           </div>
         ) : (
           <div>
-            <div className="tabs">
-              {!mslInfo?.reportsOnly && (
-                <>
-                  {canViewTab('logCall') && <button onClick={() => setTab('log')} className={tab==='log'? 'active':''}>Log Call</button>}
-                  {canViewTab('plan') && <button onClick={() => setTab('plan')} className={tab==='plan'? 'active':''}>Plan</button>}
-                  {canViewTab('messages') && <button onClick={() => setTab('edit')} className={tab==='edit'? 'active':''}>Messages</button>}
-                  {canViewTab('products') && <button onClick={() => setTab('products')} className={tab==='products'? 'active':''}>Products</button>}
-                  {canViewTab('medReps') && <button onClick={() => setTab('medreps')} className={tab==='medreps'? 'active':''}>Med Reps</button>}
-                  {mslInfo?.manager && <button onClick={() => setTab('accounts')} className={tab==='accounts'? 'active':''}>Account Mgmt</button>}
-                </>
-              )}
+            <div class="tabs">
+              {canViewTab('logCall') && <button onClick={() => setTab('log')} className={tab==='log'? 'active':''}>Log Call</button>}
+              {canViewTab('plan') && <button onClick={() => setTab('plan')} className={tab==='plan'? 'active':''}>Plan</button>}
+              {canViewTab('messages') && <button onClick={() => setTab('edit')} className={tab==='edit'? 'active':''}>Messages</button>}
+              {canViewTab('products') && <button onClick={() => setTab('products')} className={tab==='products'? 'active':''}>Products</button>}
+              {canViewTab('medReps') && <button onClick={() => setTab('medreps')} className={tab==='medreps'? 'active':''}>Med Reps</button>}
+              {mslInfo?.manager && <button onClick={() => setTab('accounts')} className={tab==='accounts'? 'active':''}>Account Mgmt</button>}
               {canViewTab('mslReport') && <button onClick={() => setTab('mslreport')} className={tab==='mslreport'? 'active':''}>MSL Report</button>}
               {canViewTab('mrReport') && <button onClick={() => setTab('mrreport')} className={tab==='mrreport'? 'active':''}>MR Reports</button>}
             </div>
