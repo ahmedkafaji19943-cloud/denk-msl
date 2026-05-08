@@ -45,13 +45,14 @@ export default function App() {
             const settings = await ensureUserSettings(msl)
             console.log(`[App] Settings loaded for ${msl.name}:`, JSON.stringify({ allowedTabs: settings?.allowedTabs, allowedProvinces: settings?.allowedProvinces }))
             setUserSettings(settings)
+            // Set initial tab based on what the user is actually allowed to see
+            const tabMap = { logCall: 'log', plan: 'plan', messages: 'edit', products: 'products', medReps: 'medreps', mslReport: 'mslreport', mrReport: 'mrreport' }
+            const firstAllowed = (settings?.allowedTabs || []).find(t => tabMap[t])
+            if (firstAllowed) setTab(tabMap[firstAllowed])
           } catch (settingsErr) {
             console.error(`[App] Failed to load settings for ${msl.name}:`, settingsErr.code, settingsErr.message)
             // Keep userSettings null — canViewTab will block all tabs on null
             setUserSettings(null)
-          }
-          if (msl.reportsOnly) {
-            setTab('mslreport')
           }
         }
       }
@@ -138,7 +139,7 @@ export default function App() {
           </div>
         ) : (
           <div>
-            <div class="tabs">
+            <div className="tabs">
               {canViewTab('logCall') && <button onClick={() => setTab('log')} className={tab==='log'? 'active':''}>Log Call</button>}
               {canViewTab('plan') && <button onClick={() => setTab('plan')} className={tab==='plan'? 'active':''}>Plan</button>}
               {canViewTab('messages') && <button onClick={() => setTab('edit')} className={tab==='edit'? 'active':''}>Messages</button>}
@@ -157,14 +158,14 @@ export default function App() {
 
             {config && mslInfo && (
               <>
-                {tab==='log' && <LogCall user={user} mslId={mslInfo.id} config={config} />}
-                {tab==='plan' && <PlanManager mslId={mslInfo.id} mslName={mslInfo.name} config={config} />}
-                {tab==='edit' && <MessagesEdit mslId={mslInfo.id} config={config} />}
-                {tab==='products' && <ProductManager config={config} onProductAdded={reloadConfig} />}
-                {tab==='medreps' && <MedRepManager config={config} onMedRepsUpdated={reloadConfig} />}
-                {tab==='accounts' && <AccountManager config={config} onAccountAdded={reloadConfig} />}
-                {tab==='mslreport' && <Reports mslId={mslInfo.id} mslName={mslInfo.name} isManager={mslInfo?.manager || false} config={config} />}
-                {tab==='mrreport' && <MRReports config={config} allowedProvinces={userSettings?.allowedProvinces} />}
+                {tab==='log' && canViewTab('logCall') && <LogCall user={user} mslId={mslInfo.id} config={config} />}
+                {tab==='plan' && canViewTab('plan') && <PlanManager mslId={mslInfo.id} mslName={mslInfo.name} config={config} />}
+                {tab==='edit' && canViewTab('messages') && <MessagesEdit mslId={mslInfo.id} config={config} />}
+                {tab==='products' && canViewTab('products') && <ProductManager config={config} onProductAdded={reloadConfig} />}
+                {tab==='medreps' && canViewTab('medReps') && <MedRepManager config={config} onMedRepsUpdated={reloadConfig} />}
+                {tab==='accounts' && mslInfo?.manager && <AccountManager config={config} onAccountAdded={reloadConfig} />}
+                {tab==='mslreport' && canViewTab('mslReport') && <Reports mslId={mslInfo.id} mslName={mslInfo.name} isManager={mslInfo?.manager || false} config={config} />}
+                {tab==='mrreport' && canViewTab('mrReport') && <MRReports config={config} allowedProvinces={userSettings?.allowedProvinces} />}
               </>
             )}
           </div>
